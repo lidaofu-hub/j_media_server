@@ -11,6 +11,7 @@
 1. 本项目基于2023.11.23拉取master分支代码编译
 2. 本项目为实例项目，方便使用者熟悉ZLMediaKit的Java Api开发
 
-
+## 常见问题
+在windows环境运行出现java.lang.UnsatisfiedLinkError问题，请安装openssl库 参见[OpenSSL下载 ](https://slproweb.com/products/Win32OpenSSL.html)
 ## 学习探讨
     wx：L746101210
