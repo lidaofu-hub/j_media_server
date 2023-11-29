@@ -1,10 +1,7 @@
 package com.ldf.media.context;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
 import com.ldf.media.callback.*;
 import com.ldf.media.config.MediaServerConfig;
-import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.sdk.core.ZLMApi;
 import com.ldf.media.sdk.structure.MK_EVENTS;
 import com.ldf.media.sdk.structure.MK_INI;
@@ -15,9 +12,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 
 /**
  * 流媒体上下文
@@ -35,38 +29,9 @@ public class MediaServerContext {
 
     @PostConstruct
     public void initMediaServer() {
-        File tempPath = null;
-        String sdkPath;
-        try {
-            if (FileUtil.isWindows()) {
-                tempPath = new File(System.getProperty("java.io.tmpdir") + File.separator + MediaServerConstants.ZLM_PATH);
-                if (!tempPath.exists()) {
-                    tempPath.mkdirs();
-                    tempPath.deleteOnExit();
-                }
-                File exe = new File(tempPath, MediaServerConstants.ZLM_WIN);
-                if (!exe.exists()) {
-                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream("lib/" + MediaServerConstants.ZLM_WIN), new FileOutputStream(exe));
-                }
-                sdkPath = tempPath.getAbsolutePath() + File.separator + MediaServerConstants.ZLM_WIN;
-            } else {
-                tempPath = new File(System.getProperty("user.dir") + File.separator + MediaServerConstants.ZLM_PATH);
-                if (!tempPath.exists()) {
-                    tempPath.mkdirs();
-                    tempPath.deleteOnExit();
-                }
-                File sh = new File(tempPath, MediaServerConstants.ZLM_LINUX);
-                if (!sh.exists()) {
-                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream("lib/" + MediaServerConstants.ZLM_LINUX), new FileOutputStream(sh));
-                }
-                sdkPath = tempPath.getAbsolutePath() + File.separator + MediaServerConstants.ZLM_LINUX;
-            }
-            ZLM_API = Native.load(sdkPath, ZLMApi.class);
-            log.info("【MediaServer】初始化MediaServer程序成功,目录：{}", sdkPath);
-            this.initServerConf();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        ZLM_API = Native.load("mk_api", ZLMApi.class);
+        log.info("【MediaServer】初始化MediaServer程序成功");
+        this.initServerConf();
     }
 
 
