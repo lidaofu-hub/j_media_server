@@ -46,7 +46,7 @@ public class MediaServerContext {
                 }
                 File exe = new File(tempPath, MediaServerConstants.ZLM_WIN);
                 if (!exe.exists()) {
-                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream(MediaServerConstants.ZLM_PATH + "/" + MediaServerConstants.ZLM_WIN), new FileOutputStream(exe));
+                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream("lib/" + MediaServerConstants.ZLM_WIN), new FileOutputStream(exe));
                 }
                 sdkPath = tempPath.getAbsolutePath() + File.separator + MediaServerConstants.ZLM_WIN;
             } else {
@@ -57,7 +57,7 @@ public class MediaServerContext {
                 }
                 File sh = new File(tempPath, MediaServerConstants.ZLM_LINUX);
                 if (!sh.exists()) {
-                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream(MediaServerConstants.ZLM_PATH + File.separator + MediaServerConstants.ZLM_LINUX), new FileOutputStream(sh));
+                    IoUtil.copy(MediaServerContext.class.getClassLoader().getResourceAsStream("lib/" + MediaServerConstants.ZLM_LINUX), new FileOutputStream(sh));
                 }
                 sdkPath = tempPath.getAbsolutePath() + File.separator + MediaServerConstants.ZLM_LINUX;
             }
@@ -100,8 +100,8 @@ public class MediaServerContext {
         MK_EVENTS.on_mk_media_changed = new MKStreamChangeCallBack();
         MK_EVENTS.on_mk_media_no_reader = new MKNoReaderCallBack();
         MK_EVENTS.on_mk_media_publish = new MKPublishCallBack();
-        MK_EVENTS.on_mk_media_not_found=new MKNoFoundCallBack();
-        MK_EVENTS.on_mk_http_access=new MKHttpAccessCallBack();
+        MK_EVENTS.on_mk_media_not_found = new MKNoFoundCallBack();
+        MK_EVENTS.on_mk_http_access = new MKHttpAccessCallBack();
         MK_EVENTS.on_mk_flow_report = new MKHttpFlowReportCallBack();
         MK_EVENTS.on_mk_media_play = new MKPlayCallBack();
         MK_EVENTS.on_mk_http_request = new MKHttpRequestCallBack();
