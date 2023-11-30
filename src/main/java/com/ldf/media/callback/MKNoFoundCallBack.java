@@ -16,9 +16,8 @@ import com.sun.jna.Native;
 public class MKNoFoundCallBack implements IMKNoFoundCallBack {
 
     public MKNoFoundCallBack() {
-        CallbackThreadInitializer mediaServerLogThread = new CallbackThreadInitializer(true, false, "MediaNoFoundThread");
         //回调使用同一个线程
-        Native.setCallbackThreadInitializer(this, mediaServerLogThread);
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaNoFoundThread"));
     }
     /**
      * 未找到流后会广播该事件，请在监听该事件后去拉流或其他方式产生流，这样就能按需拉流了

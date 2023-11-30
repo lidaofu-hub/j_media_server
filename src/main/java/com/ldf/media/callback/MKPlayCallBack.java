@@ -17,9 +17,8 @@ import com.sun.jna.Native;
  **/
 public class MKPlayCallBack implements IMKPlayCallBack {
     public MKPlayCallBack() {
-        CallbackThreadInitializer mediaServerLogThread = new CallbackThreadInitializer(true, false, "MediaPlayThread");
         //回调使用同一个线程
-        Native.setCallbackThreadInitializer(this, mediaServerLogThread);
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaPlayThread"));
     }
     /**
      * 播放rtsp/rtmp/http-flv/hls事件广播，通过该事件控制播放鉴权

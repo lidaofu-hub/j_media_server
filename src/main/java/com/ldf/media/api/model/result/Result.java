@@ -1,4 +1,4 @@
-package com.ldf.media.api.model;
+package com.ldf.media.api.model.result;
 
 import com.ldf.media.enums.ResultEnum;
 import lombok.AllArgsConstructor;

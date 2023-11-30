@@ -15,9 +15,8 @@ import com.sun.jna.Native;
  **/
 public class MKNoReaderCallBack implements IMKNoReaderCallBack {
     public MKNoReaderCallBack() {
-        CallbackThreadInitializer mediaServerLogThread = new CallbackThreadInitializer(true, false, "MediaNoReaderThread");
         //回调使用同一个线程
-        Native.setCallbackThreadInitializer(this, mediaServerLogThread);
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaNoReaderThread"));
     }
 
     /**

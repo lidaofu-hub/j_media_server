@@ -25,7 +25,7 @@ media:
   rtmp_demand: 1
   ts_demand: 1
   fmp4_demand: 1
-  log_level: 2
+  log_level: 4
   log_mask: 1  #1console 2file 4fun
   log_file_days: 1
   log_path: E:/media

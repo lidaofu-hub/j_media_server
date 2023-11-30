@@ -2,7 +2,7 @@ package com.ldf.media.exception;
 
 
 import cn.hutool.core.util.StrUtil;
-import com.ldf.media.api.model.Result;
+import com.ldf.media.api.model.result.Result;
 import com.ldf.media.enums.ResultEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<String> handleException(Exception ex, HttpServletRequest request) {
         log.error("【业务】接口异常 接口接口地址：{} 错误信息：{}", request.getRequestURI(), ex.getMessage(), ex);
-        return new Result<>(ResultEnum.ERROR);
+        return new Result<>(ResultEnum.EXCEPTION);
     }
 
     /**
@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
         String parameterType = ex.getParameterType();
         String format = StrUtil.format("请求的接口缺少参数类型为：{} 参数名为：{} 的参数", parameterType, parameterName);
         log.error("【业务】接口缺少参数异常 接口接口地址：{} 错误信息：{}", request.getRequestURI(), format);
-        return new Result<>(ResultEnum.ERROR.getCode(), format);
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), format);
     }
 
     /**
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
         Object value = ex.getValue();
         String format = StrUtil.format("请求的接口需要的参数类型为：{} 参数名为：{} 的参数 错误值为 ：{}", typename, name, value.toString());
         log.error("【业务】接口参数类型不匹配异常 接口接口地址：{} 错误信息：{}", request.getRequestURI(), format);
-        return new Result<>(ResultEnum.ERROR.getCode(), format);
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), format);
     }
 
 
@@ -89,7 +89,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = HttpMessageNotReadableException.class)
     public Result<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
         log.error("【业务】接口Json参数异常 接口接口地址：{} 错误信息：{}", request.getRequestURI(), ex.getMessage(), ex);
-        return new Result<>(ResultEnum.ERROR.getCode(), "JSON对象中的参数类型不正确");
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), "JSON对象中的参数类型不正确");
     }
 
     /**
@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     public Result<String> handleBindException(BindException ex, HttpServletRequest request) {
         log.error("【业务】接口Json绑定异常 接口接口地址：{} 错误信息：{}", request.getRequestURI(), ex.getMessage(), ex);
-        return new Result<>(ResultEnum.ERROR.getCode(), "JSON对象中的参数数据不符合规范或绑定异常");
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), "JSON对象中的参数数据不符合规范或绑定异常");
     }
 
     /**
@@ -117,7 +117,7 @@ public class GlobalExceptionHandler {
         BindingResult bindingResult = ex.getBindingResult();
         List<ObjectError> allErrors = bindingResult.getAllErrors();
         log.error("【业务】接口Json参数绑定异常 接口地址：{} 错误信息：{}", request.getRequestURI(), allErrors.get(0).getDefaultMessage(), ex);
-        return new Result<>(ResultEnum.ERROR.getCode(), allErrors.get(0).getDefaultMessage());
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), allErrors.get(0).getDefaultMessage());
     }
 
     /**
@@ -134,7 +134,7 @@ public class GlobalExceptionHandler {
             log.error("【业务】接口参数校验异常 接口地址：{} 错误信息：{}", request.getRequestURI(), constraintViolation.getMessage(), ex);
             return new Result<>(ResultEnum.ERROR.getCode(), constraintViolation.getMessage());
         }
-        return new Result<>(ResultEnum.ERROR.getCode(), "参数为空或错误");
+        return new Result<>(ResultEnum.INVALID_ARGS.getCode(), "参数为空或错误");
     }
 
 
@@ -157,7 +157,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<String> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         log.error("【业务】业务断言异常异常 接口地址：{} 错误信息：{}", request.getRequestURI(), ex.getMessage());
-        return new Result<>(500, ex.getMessage());
+        return new Result<>(ResultEnum.ERROR.getCode(), ex.getMessage());
     }
 
 }

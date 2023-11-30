@@ -1,4 +1,4 @@
-package com.ldf.media.api.model;
+package com.ldf.media.api.model.param;
 
 import cn.hutool.core.annotation.Alias;
 import io.swagger.annotations.ApiModel;

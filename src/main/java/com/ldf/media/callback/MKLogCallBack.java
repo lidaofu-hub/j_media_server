@@ -12,9 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MKLogCallBack implements IMKLogCallBack {
 
     public MKLogCallBack() {
-        CallbackThreadInitializer mediaServerLogThread = new CallbackThreadInitializer(true, false, "MediaServerLogThread");
         //回调使用同一个线程
-        Native.setCallbackThreadInitializer(this, mediaServerLogThread);
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaServerLogThread"));
     }
 
     /**
