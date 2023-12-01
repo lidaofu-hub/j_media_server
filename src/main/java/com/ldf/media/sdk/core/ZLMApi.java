@@ -1,6 +1,5 @@
 package com.ldf.media.sdk.core;
 
-
 import com.ldf.media.sdk.callback.*;
 import com.ldf.media.sdk.structure.*;
 import com.sun.jna.Library;
@@ -25,20 +24,24 @@ public interface ZLMApi extends Library {
     /**
      * 服务器初始化
      *
-     * 基础类型参数版本的mk_env_init，为了方便其他语言调用
-     * @param thread_num 线程数
-     * @param log_level 日志级别,支持0~4
-     * @param log_mask 日志输出方式掩模，请查看LOG_CONSOLE、LOG_FILE、LOG_CALLBACK等宏
-     * @param log_file_path 文件日志保存路径,路径可以不存在(内部可以创建文件夹)，设置为NULL关闭日志输出至文件
-     * @param log_file_days 文件日志保存天数,设置为0关闭日志文件
-     * @param ini_is_path 配置文件是内容还是路径
-     * @param ini 配置文件内容或路径，可以为NULL,如果该文件不存在，那么将导出默认配置至该文件
-     * @param ssl_is_path ssl证书是内容还是路径
-     * @param ssl ssl证书内容或路径，可以为NULL
-     * @param ssl_pwd 证书密码，可以为NULL
+     * @param thread_num
+     * @param log_level
+     * @param log_mask
+     * @param log_file_path
+     * @param log_file_days
+     * @param ini_is_path
+     * @param ini
+     * @param ssl_is_path
+     * @param ssl
+     * @param ssl_pwd
      */
     void mk_env_init1(int thread_num, int log_level, int log_mask, String log_file_path, int log_file_days, int ini_is_path, Pointer ini, int ssl_is_path, String ssl, String ssl_pwd);
 
+
+    /**
+     * 创建ini配置对象
+     */
+    MK_INI mk_ini_create();
 
     /**
      * 返回全局默认ini配置
@@ -46,6 +49,24 @@ public interface ZLMApi extends Library {
      * @return 全局默认ini配置，请勿用mk_ini_release释放它
      */
     MK_INI mk_ini_default();
+
+
+    /**
+     * 加载ini配置文件内容
+     *
+     * @param ini ini对象
+     * @param str 配置文件内容
+     */
+    void mk_ini_load_string(MK_INI ini, String str);
+
+    /**
+     * 加载ini配置文件
+     *
+     * @param ini  ini对象
+     * @param file 配置文件路径
+     */
+    void mk_ini_load_file(MK_INI ini, String file);
+
 
     /**
      * 销毁ini配置对象
@@ -59,7 +80,6 @@ public interface ZLMApi extends Library {
      * @return 配置文件内容字符串，用完后需要自行mk_free
      */
     Pointer mk_ini_dump_string(MK_INI ini);
-
 
     /**
      * 添加或覆盖配置项
@@ -570,7 +590,32 @@ public interface ZLMApi extends Library {
      */
     MK_THREAD mk_media_get_owner_thread(MK_MEDIA ctx);
 
-    /*******************************推流相关**********************************/
+    /*******************************轨道相关**********************************/
+    /**
+     * 创建track对象引用
+     *
+     * @param codec_id 请参考MKCodecXXX 常量定义
+     * @param args     视频或音频参数
+     * @return track对象引用
+     */
+    MK_TRACK mk_track_create(int codec_id, CodecArgs args);
+
+    /**
+     * 减引用track对象
+     *
+     * @param track track对象
+     */
+    void mk_track_unref(MK_TRACK track);
+
+    /**
+     * 引用track对象
+     *
+     * @param track track对象
+     * @return 新的track引用对象
+     */
+    MK_TRACK mk_track_ref(MK_TRACK track);
+
+
     /*
      * 获取track 编码codec类型，请参考MKCodecXXX定义
      */
@@ -620,6 +665,30 @@ public interface ZLMApi extends Library {
      * 获取音频位数，一般为16bit
      */
     int mk_track_audio_sample_bit(MK_TRACK track);
+
+    /**
+     * 监听frame输出事件
+     *
+     * @param track     track对象
+     * @param cb        frame输出回调
+     * @param user_data frame输出回调用户指针参数
+     */
+    void mk_track_add_delegate(MK_TRACK track, IMKFrameOutCallBack cb, Pointer user_data);
+
+    void mk_track_add_delegate2(MK_TRACK track, IMKFrameOutCallBack cb, Pointer user_data, IMKFreeUserDataCallBack user_data_free);
+
+    /**
+     * 取消frame输出事件监听
+     *
+     * @param track track对象
+     * @param tag   mk_track_add_delegate返回值
+     */
+    void mk_track_del_delegate(MK_TRACK track, Pointer tag);
+
+    /**
+     * 输入frame到track，通常你不需要调用此api
+     */
+    void mk_track_input_frame(MK_TRACK track, MK_FRAME frame);
 
     /*******************************推流相关**********************************/
 
@@ -805,6 +874,72 @@ public interface ZLMApi extends Library {
      * @param track_type 0：视频，1：音频
      */
     float mk_player_loss_rate(MK_PLAYER ctx, int track_type);
+
+
+    /*******************************录制相关**********************************/
+    /**
+     * 创建flv录制器
+     *
+     * @return
+     */
+    MK_FLV_RECORDER mk_flv_recorder_create();
+
+    /**
+     * 释放flv录制器
+     *
+     * @param ctx
+     */
+    void mk_flv_recorder_release(MK_FLV_RECORDER ctx);
+
+    /**
+     * 开始录制flv
+     *
+     * @param ctx       flv录制器
+     * @param vhost     虚拟主机
+     * @param app       绑定的RtmpMediaSource的 app名
+     * @param stream    绑定的RtmpMediaSource的 stream名
+     * @param file_path 文件存放地址
+     * @return 0:开始超过，-1:失败,打开文件失败或该RtmpMediaSource不存在
+     */
+    int mk_flv_recorder_start(MK_FLV_RECORDER ctx, String vhost, String app, String stream, String file_path);
+
+///////////////////////////////////////////hls/mp4录制/////////////////////////////////////////////
+
+    /**
+     * 获取录制状态
+     *
+     * @param type   0:hls,1:MP4
+     * @param vhost  虚拟主机
+     * @param app    应用名
+     * @param stream 流id
+     * @return 录制状态, 0:未录制, 1:正在录制
+     */
+    int mk_recorder_is_recording(int type, String vhost, String app, String stream);
+
+    /**
+     * 开始录制
+     *
+     * @param type            0:hls-ts,1:MP4,2:hls-fmp4,3:http-fmp4,4:http-ts
+     * @param vhost           虚拟主机
+     * @param app             应用名
+     * @param stream          流id
+     * @param customized_path 录像文件保存自定义目录，默认为空或null则自动生成
+     * @param max_second      mp4录制最大切片时间，单位秒，置0则采用配置文件配置
+     * @return 1代表成功，0代表失败
+     */
+    int mk_recorder_start(int type, String vhost, String app, String stream, String customized_path, long max_second);
+
+    /**
+     * 停止录制
+     *
+     * @param type   0:hls-ts,1:MP4,2:hls-fmp4,3:http-fmp4,4:http-ts
+     * @param vhost  虚拟主机
+     * @param app    应用名
+     * @param stream 流id
+     * @return 1:成功，0：失败
+     */
+    int mk_recorder_stop(int type, String vhost, String app, String stream);
+
 
     /*******************************事件相关**********************************/
 

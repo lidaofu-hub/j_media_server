@@ -4,22 +4,17 @@ package com.ldf.media.constants;
  * 常量
  *
  * @author lidaofu
- * @since 2023/11/28
+ * @since 2023/11/30
  **/
 public interface MediaServerConstants {
 
     /**
-     * 基础路径
+     * 默认vhost
      */
-    String ZLM_PATH = "zlm-sdk";
+    String DEFAULT_VHOST="__defaultVhost__";
 
     /**
-     * ZLM win文件
+     * 默认app
      */
-    String ZLM_WIN = "mk_api.dll";
-
-    /**
-     * ZLM linux文件
-     */
-    String ZLM_LINUX = "libmk_api.so";
+    String DEFAULT_APP="live";
 }
