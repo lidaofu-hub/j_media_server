@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
     <groupId>com.ldf</groupId>
-    <artifactId>j_media_server</artifactId>
+    <artifactId>j-media-server</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -72,6 +72,11 @@
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
             <version>4.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ldf</groupId>
+            <artifactId>j-zlm-sdk</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <!--腾讯云mvn-->
