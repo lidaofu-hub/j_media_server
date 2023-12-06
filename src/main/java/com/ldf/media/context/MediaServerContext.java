@@ -53,6 +53,7 @@ public class MediaServerContext {
         ZLM_API.mk_ini_set_option_int(mkIni, "protocol.enable_audio", config.getEnable_audio());
         ZLM_API.mk_ini_set_option_int(mkIni, "protocol.mp4_as_player", config.getMp4_as_player());
         ZLM_API.mk_ini_set_option_int(mkIni, "protocol.mp4_max_second", config.getMp4_max_second());
+        ZLM_API.mk_ini_set_option(mkIni, "http.rootPath", config.getRootPath());
         ZLM_API.mk_ini_set_option(mkIni, "protocol.mp4_save_path", config.getMp4_save_path());
         ZLM_API.mk_ini_set_option(mkIni, "protocol.hls_save_path", config.getHls_save_path());
         ZLM_API.mk_ini_set_option_int(mkIni, "protocol.hls_demand", config.getHls_demand());
@@ -66,12 +67,12 @@ public class MediaServerContext {
         MK_EVENTS.on_mk_media_no_reader = new MKNoReaderCallBack();
         MK_EVENTS.on_mk_media_publish = new MKPublishCallBack();
         MK_EVENTS.on_mk_media_not_found = new MKNoFoundCallBack();
-        MK_EVENTS.on_mk_http_access = new MKHttpAccessCallBack();
         MK_EVENTS.on_mk_flow_report = new MKHttpFlowReportCallBack();
         MK_EVENTS.on_mk_media_play = new MKPlayCallBack();
+ /*       MK_EVENTS.on_mk_http_access = new MKHttpAccessCallBack();
         MK_EVENTS.on_mk_http_request = new MKHttpRequestCallBack();
         MK_EVENTS.on_mk_http_access = new MKHttpAccessCallBack();
-        MK_EVENTS.on_mk_http_before_access = new MKHttpBeforeAccessCallBack();
+        MK_EVENTS.on_mk_http_before_access = new MKHttpBeforeAccessCallBack();*/
         MK_EVENTS.on_mk_record_mp4 = new MKRecordMp4CallBack();
         MK_EVENTS.on_mk_log = new MKLogCallBack();
         //添加全局回调

@@ -53,6 +53,8 @@ public class MediaServerConfig {
 
     private String hls_save_path;
 
+    private String rootPath;
+
     private Integer hls_demand;
 
     private Integer rtsp_demand;

@@ -20,6 +20,7 @@ media:
   mp4_max_second: 3600
   mp4_save_path: E:/media
   hls_save_path: E:/media
+  rootPath: E:/media
   hls_demand: 1
   rtsp_demand: 1
   rtmp_demand: 1
