@@ -5,7 +5,7 @@
 感谢 [@夏楚](https://github.com/xia-chu)
 提供了这么好的开源流媒体服务器软件[ZLMediaKit](https://github.com/ZLMediaKit/ZLMediaKit)
 
-本项目可以作为[j_zlm_sdk](https://github.com/lidaofu-hub/j_zlm_sdk)使用示例代码。
+本项目可以作为[j_zlm_sdk](https://github.com/lidaofu-hub/j_zlm_sdk)使用示例代码。不重复造流媒体服务器轮子，只做代码集成实例。
 
 
 
@@ -21,6 +21,9 @@
     - 拉流代理接口：/index/api/addStreamProxy
     - 关闭流接口：/index/api/close_stream&/index/api/close_streams
     - 在线流列表接口：/index/api/getMediaList
+    - 开始录像接口：/index/api/startRecord
+    - 停止录像接口：/index/api/stopRecord
+    - 获取录像状态接口：/index/api/isRecording
     - 开发中：😁
 - **回调实现**：
     - MKHttpAccessCallBack：http鉴权回调
@@ -41,7 +44,6 @@
     - FLV拉流：http://127.0.0.1:http_port/流APP/流名称.live.flv
     - WS-FLV拉流：ws://127.0.0.1:http_port/流APP/流名称.live.flv
     - HLS拉流：http://127.0.0.1:http_port/流APP/流名称/hls.m3u8
-    - WS-HLS拉流：ws://127.0.0.1:http_port/流APP/流名称/hls.m3u8
     - RTMP拉流：rtmp://127.0.0.1:rtmp_port/流APP/流名称
     - RTSP拉流：rtsp://127.0.0.1:rtsp_port/流APP/流名称
 
@@ -52,4 +54,8 @@
 ## 😁常见问题
 1.在 windows 环境运行出现 java.lang.UnsatisfiedLinkError 问题，请安装 openssl 库 参见OpenSSL 下载 或者复制libssl-3-x64.dll&libcrypto-3-x64.dll到系统动态链接库下
 ## 😁学习探讨
-	wx：L746101210
+ <p align="center">
+  <a >
+   <img alt="zlm4j-qun" src="doc/images/qun.jpg" width="350px">
+  </a>
+</p>

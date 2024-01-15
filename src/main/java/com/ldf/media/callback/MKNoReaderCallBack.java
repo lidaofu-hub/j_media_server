@@ -25,6 +25,7 @@ public class MKNoReaderCallBack implements IMKNoReaderCallBack {
      * @param sender 该MediaSource对象
      */
     public void invoke(MK_MEDIA_SOURCE sender) {
+        //无人观看时候可以选择关闭这个流资源
         MediaServerContext.ZLM_API.mk_media_source_close(sender,1);
     }
 }

@@ -23,7 +23,7 @@ media:
   rootPath: E:/media
   hls_demand: 1
   rtsp_demand: 1
-  rtmp_demand: 1
+  rtmp_demand: 0
   ts_demand: 1
   fmp4_demand: 1
   log_level: 4

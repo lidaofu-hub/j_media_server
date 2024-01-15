@@ -28,7 +28,7 @@ public class MKNoFoundCallBack implements IMKNoFoundCallBack {
      * 0 等待流注册
      */
     public int invoke(MK_MEDIA_INFO url_info, MK_SOCK_INFO sender){
-
+        //这里可以实现按需拉流，这里面新起个线程去操作拉起流
         return 1;
     }
 }

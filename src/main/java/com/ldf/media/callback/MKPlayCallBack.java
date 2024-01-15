@@ -29,6 +29,9 @@ public class MKPlayCallBack implements IMKPlayCallBack {
      * @see mk_auth_invoker_do
      */
     public void invoke(MK_MEDIA_INFO url_info, MK_AUTH_INVOKER invoker, MK_SOCK_INFO sender) {
+        //这里拿到访问路径后(例如http://xxxx/xxx/xxx.live.flv?token=xxxx其中?后面就是拿到的参数)的参数
+        // err_msg返回 空字符串表示鉴权成功 否则鉴权失败提示
+        //String param = ZLM_API.mk_media_info_get_params(url_info);
         MediaServerContext.ZLM_API.mk_auth_invoker_do(invoker,"");
     }
 }

@@ -30,6 +30,7 @@ public class MKStreamChangeCallBack implements IMKStreamChangeCallBack {
      * @param sender 该MediaSource对象
      */
     public void invoke(int regist, MK_MEDIA_SOURCE sender){
+        //这里进行流状态处理
         String stream =     MediaServerContext.ZLM_API.mk_media_source_get_stream(sender);
         String app =  MediaServerContext.ZLM_API.mk_media_source_get_app(sender);
         String schema =   MediaServerContext.ZLM_API.mk_media_source_get_schema(sender);

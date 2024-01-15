@@ -1,9 +1,6 @@
 package com.ldf.media.api.service;
 
-import com.ldf.media.api.model.param.CloseStreamParam;
-import com.ldf.media.api.model.param.CloseStreamsParam;
-import com.ldf.media.api.model.param.GetMediaListParam;
-import com.ldf.media.api.model.param.StreamProxyParam;
+import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
 
 import java.util.List;
@@ -23,4 +20,9 @@ public interface IApiService {
     Integer closeStreams(CloseStreamsParam param);
     List<MediaInfoResult> getMediaList(GetMediaListParam param);
 
+    Boolean startRecord(StartRecordParam param);
+
+    Boolean stopRecord(StopRecordParam param);
+
+    Boolean isRecording(RecordStatusParam param);
 }

@@ -1,10 +1,7 @@
 package com.ldf.media.api.service.impl;
 
 import cn.hutool.core.lang.Assert;
-import com.ldf.media.api.model.param.CloseStreamParam;
-import com.ldf.media.api.model.param.CloseStreamsParam;
-import com.ldf.media.api.model.param.GetMediaListParam;
-import com.ldf.media.api.model.param.StreamProxyParam;
+import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
 import com.ldf.media.api.model.result.Track;
 import com.ldf.media.api.service.IApiService;
@@ -125,4 +122,23 @@ public class ApiServiceImpl implements IApiService {
         }
         return list;
     }
+
+    @Override
+    public Boolean startRecord(StartRecordParam param) {
+        int ret = MediaServerContext.ZLM_API.mk_recorder_start(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), param.getCustomized_path(), param.getMax_second());
+        return ret == 1;
+    }
+
+    @Override
+    public Boolean stopRecord(StopRecordParam param) {
+        int ret = MediaServerContext.ZLM_API.mk_recorder_stop(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        return ret == 1;
+    }
+
+    @Override
+    public Boolean isRecording(RecordStatusParam param) {
+        int ret = MediaServerContext.ZLM_API.mk_recorder_is_recording(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        return ret == 1;
+    }
+
 }

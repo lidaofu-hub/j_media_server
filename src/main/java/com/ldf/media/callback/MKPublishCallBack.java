@@ -31,6 +31,9 @@ public class MKPublishCallBack implements IMKPublishCallBack {
      */
     @Override
     public void invoke(MK_MEDIA_INFO url_info, MK_PUBLISH_AUTH_INVOKER invoker, MK_SOCK_INFO sender) {
+        //这里拿到访问路径后(例如rtmp://xxxx/xxx/xxx?token=xxxx其中?后面就是拿到的参数)的参数
+        // err_msg返回 空字符串表示鉴权成功 否则鉴权失败提示
+        //String param = ZLM_API.mk_media_info_get_params(url_info);
         MediaServerContext.ZLM_API.mk_publish_auth_invoker_do(invoker,"",0,0);
     }
 }
