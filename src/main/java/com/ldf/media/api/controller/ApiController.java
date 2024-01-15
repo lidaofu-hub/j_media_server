@@ -76,12 +76,5 @@ public class ApiController {
         return new Result<>(flag);
     }
 
-    @ApiOperation(value = "是否录像")
-    @GetMapping("/getSnap")
-    public Result<Boolean> getSnap( RecordStatusParam param) {
-        Boolean flag = iApiService.isRecording(param);
-        return new Result<>(flag);
-    }
-
 
 }
