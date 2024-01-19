@@ -73,11 +73,11 @@
             <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
             <version>4.1.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.ldf</groupId>
-            <artifactId>j-zlm-sdk</artifactId>
+<!--        <dependency>
+            <groupId>com.aizuda</groupId>
+            <artifactId>zlm4j</artifactId>
             <version>1.0-SNAPSHOT</version>
-        </dependency>
+        </dependency>-->
     </dependencies>
     <!--腾讯云mvn-->
     <repositories>
