@@ -1,6 +1,6 @@
 package com.ldf.media.callback;
 
-import com.ldf.media.sdk.callback.IMKProxyPlayCloseCallBack;
+import com.aizuda.callback.IMKProxyPlayCloseCallBack;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 

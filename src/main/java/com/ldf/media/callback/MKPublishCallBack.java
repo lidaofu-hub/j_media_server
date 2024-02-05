@@ -1,10 +1,10 @@
 package com.ldf.media.callback;
 
 import com.ldf.media.context.MediaServerContext;
-import com.ldf.media.sdk.callback.IMKPublishCallBack;
-import com.ldf.media.sdk.structure.MK_MEDIA_INFO;
-import com.ldf.media.sdk.structure.MK_PUBLISH_AUTH_INVOKER;
-import com.ldf.media.sdk.structure.MK_SOCK_INFO;
+import com.aizuda.callback.IMKPublishCallBack;
+import com.aizuda.structure.MK_MEDIA_INFO;
+import com.aizuda.structure.MK_PUBLISH_AUTH_INVOKER;
+import com.aizuda.structure.MK_SOCK_INFO;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 

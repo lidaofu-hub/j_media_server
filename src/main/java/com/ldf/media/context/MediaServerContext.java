@@ -2,9 +2,9 @@ package com.ldf.media.context;
 
 import com.ldf.media.callback.*;
 import com.ldf.media.config.MediaServerConfig;
-import com.ldf.media.sdk.core.ZLMApi;
-import com.ldf.media.sdk.structure.MK_EVENTS;
-import com.ldf.media.sdk.structure.MK_INI;
+import com.aizuda.core.ZLMApi;
+import com.aizuda.structure.MK_EVENTS;
+import com.aizuda.structure.MK_INI;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
 package com.ldf.media.callback;
 
 import com.ldf.media.context.MediaServerContext;
-import com.ldf.media.sdk.callback.IMKRecordMp4CallBack;
-import com.ldf.media.sdk.structure.MK_MP4_INFO;
+import com.aizuda.callback.IMKRecordMp4CallBack;
+import com.aizuda.structure.MK_MP4_INFO;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 

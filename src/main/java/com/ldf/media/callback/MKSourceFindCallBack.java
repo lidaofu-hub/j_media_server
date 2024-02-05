@@ -1,7 +1,7 @@
 package com.ldf.media.callback;
 
-import com.ldf.media.sdk.callback.IMKSourceFindCallBack;
-import com.ldf.media.sdk.structure.MK_MEDIA_SOURCE;
+import com.aizuda.callback.IMKSourceFindCallBack;
+import com.aizuda.structure.MK_MEDIA_SOURCE;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;

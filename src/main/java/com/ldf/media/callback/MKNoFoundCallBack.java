@@ -1,8 +1,8 @@
 package com.ldf.media.callback;
 
-import com.ldf.media.sdk.callback.IMKNoFoundCallBack;
-import com.ldf.media.sdk.structure.MK_MEDIA_INFO;
-import com.ldf.media.sdk.structure.MK_SOCK_INFO;
+import com.aizuda.callback.IMKNoFoundCallBack;
+import com.aizuda.structure.MK_MEDIA_INFO;
+import com.aizuda.structure.MK_SOCK_INFO;
 import com.sun.jna.Callback;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;

@@ -1,9 +1,9 @@
 package com.ldf.media.callback;
 
-import com.ldf.media.sdk.callback.IMKHttpRequestCallBack;
-import com.ldf.media.sdk.structure.MK_HTTP_RESPONSE_INVOKER;
-import com.ldf.media.sdk.structure.MK_PARSER;
-import com.ldf.media.sdk.structure.MK_SOCK_INFO;
+import com.aizuda.callback.IMKHttpRequestCallBack;
+import com.aizuda.structure.MK_HTTP_RESPONSE_INVOKER;
+import com.aizuda.structure.MK_PARSER;
+import com.aizuda.structure.MK_SOCK_INFO;
 import com.sun.jna.ptr.IntByReference;
 
 /**
