@@ -122,7 +122,6 @@ public class MediaServerContext {
     @PreDestroy
     public void release() {
         this.stopMediaServer();
-        ZLM_API.mk_ini_release(mk_ini);
     }
 
 
