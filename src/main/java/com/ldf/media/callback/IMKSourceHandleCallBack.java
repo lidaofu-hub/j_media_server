@@ -1,6 +1,6 @@
 package com.ldf.media.callback;
 
-import com.aizuda.structure.MK_MEDIA_SOURCE;
+import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
 
 /**
  * 媒体资源回调接口

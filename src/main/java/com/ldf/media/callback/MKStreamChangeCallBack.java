@@ -2,8 +2,8 @@ package com.ldf.media.callback;
 
 import com.ldf.media.context.MediaServerContext;
 import com.ldf.media.pool.MediaServerThreadPool;
-import com.aizuda.callback.IMKStreamChangeCallBack;
-import com.aizuda.structure.MK_MEDIA_SOURCE;
+import com.aizuda.zlm4j.callback.IMKStreamChangeCallBack;
+import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
 import com.sun.jna.Callback;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;

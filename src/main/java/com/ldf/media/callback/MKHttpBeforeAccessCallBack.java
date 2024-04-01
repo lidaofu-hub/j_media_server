@@ -1,9 +1,9 @@
 
 package com.ldf.media.callback;
 
-import com.aizuda.callback.IMKHttpBeforeAccessCallBack;
-import com.aizuda.structure.MK_PARSER;
-import com.aizuda.structure.MK_SOCK_INFO;
+import com.aizuda.zlm4j.callback.IMKHttpBeforeAccessCallBack;
+import com.aizuda.zlm4j.structure.MK_PARSER;
+import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.Callback;
 
 /**

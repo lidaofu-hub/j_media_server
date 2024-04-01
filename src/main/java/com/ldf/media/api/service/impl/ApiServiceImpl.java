@@ -1,7 +1,7 @@
 package com.ldf.media.api.service.impl;
 
 import cn.hutool.core.lang.Assert;
-import com.aizuda.structure.MK_INI;
+import com.aizuda.zlm4j.structure.MK_INI;
 import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
 import com.ldf.media.api.model.result.Track;
@@ -9,10 +9,10 @@ import com.ldf.media.api.service.IApiService;
 import com.ldf.media.callback.MKSourceFindCallBack;
 import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.context.MediaServerContext;
-import com.aizuda.callback.IMKProxyPlayCloseCallBack;
-import com.aizuda.structure.MK_MEDIA_SOURCE;
-import com.aizuda.structure.MK_PROXY_PLAYER;
-import com.aizuda.structure.MK_TRACK;
+import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
+import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
+import com.aizuda.zlm4j.structure.MK_PROXY_PLAYER;
+import com.aizuda.zlm4j.structure.MK_TRACK;
 import com.sun.jna.Pointer;
 import org.springframework.stereotype.Service;
 

@@ -1,11 +1,10 @@
 package com.ldf.media.callback;
 
+import com.aizuda.zlm4j.callback.IMKPlayCallBack;
+import com.aizuda.zlm4j.structure.MK_AUTH_INVOKER;
+import com.aizuda.zlm4j.structure.MK_MEDIA_INFO;
+import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.ldf.media.context.MediaServerContext;
-import com.ldf.media.pool.MediaServerThreadPool;
-import com.aizuda.callback.IMKPlayCallBack;
-import com.aizuda.structure.MK_AUTH_INVOKER;
-import com.aizuda.structure.MK_MEDIA_INFO;
-import com.aizuda.structure.MK_SOCK_INFO;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 
@@ -20,6 +19,7 @@ public class MKPlayCallBack implements IMKPlayCallBack {
         //回调使用同一个线程
         Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaPlayThread"));
     }
+
     /**
      * 播放rtsp/rtmp/http-flv/hls事件广播，通过该事件控制播放鉴权
      *
@@ -32,6 +32,6 @@ public class MKPlayCallBack implements IMKPlayCallBack {
         //这里拿到访问路径后(例如http://xxxx/xxx/xxx.live.flv?token=xxxx其中?后面就是拿到的参数)的参数
         // err_msg返回 空字符串表示鉴权成功 否则鉴权失败提示
         //String param = ZLM_API.mk_media_info_get_params(url_info);
-        MediaServerContext.ZLM_API.mk_auth_invoker_do(invoker,"");
+        MediaServerContext.ZLM_API.mk_auth_invoker_do(invoker, "");
     }
 }

@@ -1,6 +1,6 @@
 package com.ldf.media.callback;
 
-import com.aizuda.callback.IMKLogCallBack;
+import com.aizuda.zlm4j.callback.IMKLogCallBack;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;

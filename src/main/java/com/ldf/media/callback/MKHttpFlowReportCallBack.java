@@ -1,8 +1,8 @@
 package com.ldf.media.callback;
 
-import com.aizuda.callback.IMKHttpFlowReportCallBack;
-import com.aizuda.structure.MK_MEDIA_INFO;
-import com.aizuda.structure.MK_SOCK_INFO;
+import com.aizuda.zlm4j.callback.IMKHttpFlowReportCallBack;
+import com.aizuda.zlm4j.structure.MK_MEDIA_INFO;
+import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.Callback;
 
 /**

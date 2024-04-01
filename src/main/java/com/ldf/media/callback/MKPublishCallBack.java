@@ -1,10 +1,10 @@
 package com.ldf.media.callback;
 
 import com.ldf.media.context.MediaServerContext;
-import com.aizuda.callback.IMKPublishCallBack;
-import com.aizuda.structure.MK_MEDIA_INFO;
-import com.aizuda.structure.MK_PUBLISH_AUTH_INVOKER;
-import com.aizuda.structure.MK_SOCK_INFO;
+import com.aizuda.zlm4j.callback.IMKPublishCallBack;
+import com.aizuda.zlm4j.structure.MK_MEDIA_INFO;
+import com.aizuda.zlm4j.structure.MK_PUBLISH_AUTH_INVOKER;
+import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 
@@ -34,6 +34,6 @@ public class MKPublishCallBack implements IMKPublishCallBack {
         //这里拿到访问路径后(例如rtmp://xxxx/xxx/xxx?token=xxxx其中?后面就是拿到的参数)的参数
         // err_msg返回 空字符串表示鉴权成功 否则鉴权失败提示
         //String param = ZLM_API.mk_media_info_get_params(url_info);
-        MediaServerContext.ZLM_API.mk_publish_auth_invoker_do(invoker,"",0,0);
+        MediaServerContext.ZLM_API.mk_publish_auth_invoker_do(invoker,"",1,0);
     }
 }
