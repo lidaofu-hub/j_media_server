@@ -13,9 +13,8 @@ public class MKSourceFindCallBack implements IMKSourceFindCallBack {
     private IMKSourceHandleCallBack imkSourceHandleCallBack;
 
     public MKSourceFindCallBack(IMKSourceHandleCallBack imkSourceHandleCallBack) {
-        this.imkSourceHandleCallBack = imkSourceHandleCallBack;
-        //回调使用同一个线程
         Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaSourceFindThread"));
+        this.imkSourceHandleCallBack=imkSourceHandleCallBack;
     }
 
     public void invoke(Pointer user_data, MK_MEDIA_SOURCE ctx) {

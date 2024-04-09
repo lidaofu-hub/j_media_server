@@ -19,9 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MKStreamChangeCallBack implements IMKStreamChangeCallBack {
 
     public MKStreamChangeCallBack() {
-        CallbackThreadInitializer mediaServerLogThread = new CallbackThreadInitializer(true, false, "MediaStreamChangeThread");
-        //回调使用同一个线程
-        Native.setCallbackThreadInitializer(this, mediaServerLogThread);
+        Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaStreamChangeThread"));
     }
 
     /**
@@ -34,6 +32,7 @@ public class MKStreamChangeCallBack implements IMKStreamChangeCallBack {
         String stream =     MediaServerContext.ZLM_API.mk_media_source_get_stream(sender);
         String app =  MediaServerContext.ZLM_API.mk_media_source_get_app(sender);
         String schema =   MediaServerContext.ZLM_API.mk_media_source_get_schema(sender);
+        //如果是regist是注销情况下无法获取流详细信息如观看人数等
         log.info("【MediaServer】APP:{} 流:{} 协议：{} {}",app,stream,schema,regist==1?"注册":"注销");
     }
 }
