@@ -61,7 +61,7 @@ public class WebRTCController {
                 SDP_MAP.put("whip_"+stream, sdp);
                 response.setContentType("application/sdp");
                 //todo 如果是https请换为https
-                String location=StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}",config.getRtc_host(),config.getRtc_port(),port,"whip_"+stream, RandomUtil.randomString(8));
+                String location=StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}",config.getRtc_host(),port,"whip_"+stream, RandomUtil.randomString(8));
                 response.setHeader("Location",location);
                 response.setStatus(201);
                 response.getWriter().write(sdp);
@@ -89,7 +89,7 @@ public class WebRTCController {
                 SDP_MAP.put("whep_"+stream, sdp);
                 response.setContentType("application/sdp");
                 //todo 如果是https请换为https
-                String location=StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}",config.getRtc_host(),config.getRtc_port(),port,"whip_"+stream, RandomUtil.randomString(8));
+                String location=StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}",config.getRtc_host(),port,"whip_"+stream, RandomUtil.randomString(8));
                 response.setHeader("Location",location);
                 response.setStatus(201);
                 response.getWriter().write(sdp);
