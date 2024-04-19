@@ -23,6 +23,8 @@ public class MediaServerConfig {
 
     private Integer http_port;
 
+    private Integer rtc_port;
+
     private Integer auto_close;
 
     private Integer streamNoneReaderDelayMS;
@@ -72,4 +74,6 @@ public class MediaServerConfig {
     private Integer log_file_days;
 
     private String log_path;
+
+    private String rtc_host;
 }

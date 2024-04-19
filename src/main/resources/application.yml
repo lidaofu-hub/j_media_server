@@ -5,6 +5,8 @@ media:
   rtmp_port: 7935
   rtsp_port: 7554
   http_port: 7080
+  rtc_port: 8000
+  rtc_host: 172.16.4.213
   auto_close: 0
   streamNoneReaderDelayMS: 30000
   maxStreamWaitMS: 1500

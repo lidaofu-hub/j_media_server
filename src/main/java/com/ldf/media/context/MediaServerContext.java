@@ -106,6 +106,9 @@ public class MediaServerContext {
         //创建rtmp服务器 0:失败,非0:端口号
         short rtmp_server_port = ZLM_API.mk_rtmp_server_start(config.getRtmp_port().shortValue(), 0);
         log.info("【MediaServer】RTMP流媒体服务启动：{}", rtmp_server_port == 0 ? "失败" : "成功，端口：" + rtmp_server_port);
+        //创建rtc服务器 0:失败,非0:端口号
+        short rtc_server_port = ZLM_API.mk_rtc_server_start(config.getRtc_port().shortValue());
+        log.info("【MediaServer】RTC流媒体服务启动：{}", rtc_server_port == 0 ? "失败" : "成功，端口：" + rtc_server_port);
     }
 
     /**
