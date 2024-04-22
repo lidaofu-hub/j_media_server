@@ -37,8 +37,7 @@ public class ApiServiceImpl implements IApiService {
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
         //创建拉流代理
         MK_INI option = ZLM_API.mk_ini_create();
-        ZLM_API.mk_ini_set_option_int(option,"hls_enabled",param.getEnableHls());
-        ZLM_API.mk_ini_set_option_int(option,"mp4_enabled",param.getEnableMp4());
+        ZLM_API.mk_ini_set_option_int(option,"enable_mp4",param.getEnableMp4());
         ZLM_API.mk_ini_set_option_int(option,"enable_audio",param.getEnableAudio());
         ZLM_API.mk_ini_set_option_int(option,"enable_fmp4",param.getEnableFmp4());
         ZLM_API.mk_ini_set_option_int(option,"enable_ts",param.getEnableTs());
@@ -94,12 +93,18 @@ public class ApiServiceImpl implements IApiService {
             int readerCount = ZLM_API.mk_media_source_get_reader_count(ctx);
             int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(ctx);
             int trackSize = ZLM_API.mk_media_source_get_track_count(ctx);
+            int originType = ZLM_API.mk_media_source_get_origin_type(ctx);
+            String originUrl = ZLM_API.mk_media_source_get_origin_url(ctx);
+            long createStamp = ZLM_API.mk_media_source_get_create_stamp(ctx);
             MediaInfoResult mediaInfoResult = new MediaInfoResult();
             mediaInfoResult.setApp(app);
             mediaInfoResult.setStream(stream);
             mediaInfoResult.setSchema(schema);
             mediaInfoResult.setReaderCount(readerCount);
             mediaInfoResult.setTotalReaderCount(totalReaderCount);
+            mediaInfoResult.setOriginType(originType);
+            mediaInfoResult.setOriginUrl(originUrl);
+            mediaInfoResult.setCreateStamp(createStamp);
             List<Track> tracks = new ArrayList<>();
             for (int i = 0; i < trackSize; i++) {
                 MK_TRACK mkTrack = ZLM_API.mk_media_source_get_track(ctx, i);
