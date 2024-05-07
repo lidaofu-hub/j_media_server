@@ -81,7 +81,7 @@ public class MediaServerContext {
         mk_event.on_mk_media_no_reader = new MKNoReaderCallBack();
         mk_event.on_mk_media_publish = new MKPublishCallBack();
         mk_event.on_mk_media_not_found = new MKNoFoundCallBack();
-        mk_event.on_mk_flow_report = new MKHttpFlowReportCallBack();
+        mk_event.on_mk_flow_report = new MKFlowReportCallBack();
         mk_event.on_mk_media_play = new MKPlayCallBack();
  /*       mk_event.on_mk_http_access = new MKHttpAccessCallBack();
         mk_event.on_mk_http_request = new MKHttpRequestCallBack();
