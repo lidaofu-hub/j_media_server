@@ -76,4 +76,10 @@ public class MediaServerConfig {
     private String log_path;
 
     private String rtc_host;
+
+    private Integer broadcastRecordTs;
+
+    private Integer segDur;
+
+    private Integer segNum;
 }

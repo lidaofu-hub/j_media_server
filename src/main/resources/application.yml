@@ -24,6 +24,9 @@ media:
   hls_save_path: E:/media
   rootPath: E:/media
   hls_demand: 0
+  broadcastRecordTs: 1
+  segDur: 3
+  segNum: 3
   rtsp_demand: 0
   rtmp_demand: 0
   ts_demand: 1
