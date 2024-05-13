@@ -5,10 +5,12 @@ import com.aizuda.zlm4j.structure.MK_HTTP_RESPONSE_INVOKER;
 import com.aizuda.zlm4j.structure.MK_PARSER;
 import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.ptr.IntByReference;
+import org.springframework.stereotype.Component;
 
 /**
  * 收到http api请求广播(包括GET/POST)
  */
+@Component
 public class MKHttpRequestCallBack implements IMKHttpRequestCallBack {
     /**
      * 收到http api请求广播(包括GET/POST)

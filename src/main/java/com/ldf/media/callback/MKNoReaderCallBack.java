@@ -6,6 +6,7 @@ import com.aizuda.zlm4j.callback.IMKNoReaderCallBack;
 import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
+import org.springframework.stereotype.Component;
 
 /**
  * 无人观看回调
@@ -13,6 +14,7 @@ import com.sun.jna.Native;
  * @author lidaofu
  * @since 2023/11/23
  **/
+@Component
 public class MKNoReaderCallBack implements IMKNoReaderCallBack {
     public MKNoReaderCallBack() {
         //回调使用同一个线程

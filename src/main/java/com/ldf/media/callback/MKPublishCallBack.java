@@ -8,6 +8,7 @@ import com.aizuda.zlm4j.structure.MK_PUBLISH_AUTH_INVOKER;
 import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
+import org.springframework.stereotype.Component;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
 
@@ -17,6 +18,7 @@ import static com.ldf.media.context.MediaServerContext.ZLM_API;
  * @author lidaofu
  * @since 2023/11/29
  **/
+@Component
 public class MKPublishCallBack implements IMKPublishCallBack {
 
     public MKPublishCallBack() {

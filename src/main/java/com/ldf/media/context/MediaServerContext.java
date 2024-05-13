@@ -1,9 +1,9 @@
 package com.ldf.media.context;
 
+import com.aizuda.zlm4j.callback.*;
 import com.aizuda.zlm4j.core.ZLMApi;
 import com.aizuda.zlm4j.structure.MK_EVENTS;
 import com.aizuda.zlm4j.structure.MK_INI;
-import com.ldf.media.callback.*;
 import com.ldf.media.config.MediaServerConfig;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +24,24 @@ import javax.annotation.PreDestroy;
 public class MediaServerContext {
     @Autowired
     private MediaServerConfig config;
+    @Autowired
+    private IMKStreamChangeCallBack iMKStreamChangeCallBack;
+    @Autowired
+    private IMKNoReaderCallBack iMKNoReaderCallBack;
+    @Autowired
+    private IMKPublishCallBack iMKPublishCallBack;
+    @Autowired
+    private IMKNoFoundCallBack imKNoFoundCallBack;
+    @Autowired
+    private IMKFlowReportCallBack iMKFlowReportCallBack;
+    @Autowired
+    private IMKPlayCallBack iMKPlayCallBack;
+    @Autowired
+    private IMKRecordMp4CallBack iMKRecordMp4CallBack;
+    @Autowired
+    private IMKRecordTsCallBack iMKRecordTsCallBack;
+    @Autowired
+    private IMKLogCallBack iMKLogCallBack;
     public static ZLMApi ZLM_API = null;
     private static MK_EVENTS mk_event = null;
     private static MK_INI mk_ini = null;
@@ -67,9 +85,9 @@ public class MediaServerContext {
         ZLM_API.mk_ini_set_option_int(mk_ini, "protocol.rtmp_demand", config.getRtmp_demand());
         ZLM_API.mk_ini_set_option_int(mk_ini, "protocol.ts_demand", config.getTs_demand());
         ZLM_API.mk_ini_set_option_int(mk_ini, "protocol.fmp4_demand", config.getFmp4_demand());
-        ZLM_API.mk_ini_set_option_int(mk_ini,"hls.broadcastRecordTs",config.getBroadcastRecordTs());
-        ZLM_API.mk_ini_set_option_int(mk_ini,"hls.segNum",config.getSegNum());
-        ZLM_API.mk_ini_set_option_int(mk_ini,"hls.segDur",config.getSegDur());
+        ZLM_API.mk_ini_set_option_int(mk_ini, "hls.broadcastRecordTs", config.getBroadcastRecordTs());
+        ZLM_API.mk_ini_set_option_int(mk_ini, "hls.segNum", config.getSegNum());
+        ZLM_API.mk_ini_set_option_int(mk_ini, "hls.segDur", config.getSegDur());
         //初始化zmk服务器
         ZLM_API.mk_env_init1(config.getThread_num(), config.getLog_level(), config.getLog_mask(), config.getLog_path(), config.getLog_file_days(), 0, null, 0, null, null);
     }
@@ -80,19 +98,19 @@ public class MediaServerContext {
     public void initEvents() {
         //全局回调
         mk_event = new MK_EVENTS();
-        mk_event.on_mk_media_changed = new MKStreamChangeCallBack();
-        mk_event.on_mk_media_no_reader = new MKNoReaderCallBack();
-        mk_event.on_mk_media_publish = new MKPublishCallBack();
-        mk_event.on_mk_media_not_found = new MKNoFoundCallBack();
-        mk_event.on_mk_flow_report = new MKFlowReportCallBack();
-        mk_event.on_mk_media_play = new MKPlayCallBack();
+        mk_event.on_mk_media_changed = iMKStreamChangeCallBack;
+        mk_event.on_mk_media_no_reader = iMKNoReaderCallBack;
+        mk_event.on_mk_media_publish = iMKPublishCallBack;
+        mk_event.on_mk_media_not_found = imKNoFoundCallBack;
+        mk_event.on_mk_flow_report = iMKFlowReportCallBack;
+        mk_event.on_mk_media_play = iMKPlayCallBack;
  /*       mk_event.on_mk_http_access = new MKHttpAccessCallBack();
         mk_event.on_mk_http_request = new MKHttpRequestCallBack();
         mk_event.on_mk_http_access = new MKHttpAccessCallBack();
         mk_event.on_mk_http_before_access = new MKHttpBeforeAccessCallBack();*/
-        mk_event.on_mk_record_mp4 = new MKRecordMp4CallBack();
-        mk_event.on_mk_record_ts = new MKRecordTsCallBack();
-        mk_event.on_mk_log = new MKLogCallBack();
+        mk_event.on_mk_record_mp4 = iMKRecordMp4CallBack;
+        mk_event.on_mk_record_ts = iMKRecordTsCallBack;
+        mk_event.on_mk_log = iMKLogCallBack;
         //添加全局回调
         ZLM_API.mk_events_listen(mk_event);
     }

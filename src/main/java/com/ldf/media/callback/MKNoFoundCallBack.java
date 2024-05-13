@@ -6,6 +6,7 @@ import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.Callback;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
+import org.springframework.stereotype.Component;
 
 /**
  * 未找到流后会广播该事件，请在监听该事件后去拉流或其他方式产生流，这样就能按需拉流了
@@ -13,6 +14,7 @@ import com.sun.jna.Native;
  * @author lidaofu
  * @since 2023/11/23
  **/
+@Component
 public class MKNoFoundCallBack implements IMKNoFoundCallBack {
 
     public MKNoFoundCallBack() {

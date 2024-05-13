@@ -5,10 +5,12 @@ import com.aizuda.zlm4j.callback.IMKHttpBeforeAccessCallBack;
 import com.aizuda.zlm4j.structure.MK_PARSER;
 import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.sun.jna.Callback;
+import org.springframework.stereotype.Component;
 
 /**
  * 在http文件服务器中,收到http访问文件或目录前的广播,通过该事件可以控制http url到文件路径的映射
  */
+@Component
 public class MKHttpBeforeAccessCallBack implements IMKHttpBeforeAccessCallBack {
     /**
      * 在http文件服务器中,收到http访问文件或目录前的广播,通过该事件可以控制http url到文件路径的映射

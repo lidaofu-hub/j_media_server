@@ -3,10 +3,12 @@ package com.ldf.media.callback;
 import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
+import org.springframework.stereotype.Component;
 
 /**
  * MediaSource.close()回调事件
  */
+@Component
 public class MKProxyPlayCloseCallBack implements IMKProxyPlayCloseCallBack {
     /**
      * MediaSource.close()回调事件

@@ -3,10 +3,12 @@ package com.ldf.media.callback;
 import com.aizuda.zlm4j.callback.IMKFlowReportCallBack;
 import com.aizuda.zlm4j.structure.MK_MEDIA_INFO;
 import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
+import org.springframework.stereotype.Component;
 
 /**
  * 停止rtsp/rtmp/http-flv会话后流量汇报事件广播
  */
+@Component
 public class MKFlowReportCallBack implements IMKFlowReportCallBack {
     /**
      * 停止rtsp/rtmp/http-flv会话后流量汇报事件广播

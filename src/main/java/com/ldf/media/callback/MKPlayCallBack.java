@@ -7,6 +7,7 @@ import com.aizuda.zlm4j.structure.MK_SOCK_INFO;
 import com.ldf.media.context.MediaServerContext;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
+import org.springframework.stereotype.Component;
 
 /**
  * 播放rtsp/rtmp/http-flv/hls事件广播，通过该事件控制播放鉴权
@@ -14,6 +15,7 @@ import com.sun.jna.Native;
  * @author lidaofu
  * @since 2023/11/23
  **/
+@Component
 public class MKPlayCallBack implements IMKPlayCallBack {
     public MKPlayCallBack() {
         //回调使用同一个线程

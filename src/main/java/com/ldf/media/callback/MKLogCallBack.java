@@ -4,11 +4,13 @@ import com.aizuda.zlm4j.callback.IMKLogCallBack;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
  * 日志输出广播
  */
 @Slf4j
+@Component
 public class MKLogCallBack implements IMKLogCallBack {
 
     public MKLogCallBack() {

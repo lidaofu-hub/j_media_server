@@ -5,10 +5,12 @@ import com.aizuda.zlm4j.structure.MK_RECORD_INFO;
 import com.ldf.media.context.MediaServerContext;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
+import org.springframework.stereotype.Component;
 
 /**
  * 录制mp4分片文件成功后广播
  */
+@Component
 public class MKRecordMp4CallBack implements IMKRecordMp4CallBack {
     public MKRecordMp4CallBack() {
         //回调使用同一个线程
