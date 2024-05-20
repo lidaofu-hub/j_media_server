@@ -77,7 +77,7 @@ public class ApiController {
         return new Result<>(flag);
     }
 
-    @ApiOperation(value = "获取内存信息")
+    @ApiOperation(value = "获取内存资源信息")
     @GetMapping("/getStatistic")
     public Result<Statistic> getStatistic() {
         Statistic statistic = iApiService.getStatistic();

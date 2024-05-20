@@ -2,9 +2,6 @@
 
 开源流媒体服务器ZLMediaKit 的Java Api实现的Java版ZLMediaKit流媒体服务器
 
-感谢 [@夏楚](https://github.com/xia-chu)
-提供了这么好的开源流媒体服务器软件[ZLMediaKit](https://github.com/ZLMediaKit/ZLMediaKit)
-
 本项目可以作为[j_zlm_sdk](https://github.com/lidaofu-hub/j_zlm_sdk)使用示例代码。不重复造流媒体服务器轮子，只做代码集成示例。
 
 ## 😁项目功能
@@ -15,6 +12,7 @@
     - 开始录像接口：/index/api/startRecord
     - 停止录像接口：/index/api/stopRecord
     - 获取录像状态接口：/index/api/isRecording
+    - 获取内存资源信息：/index/getStatistic
     - 开发中：😁
 - **回调实现**：
     - MKHttpAccessCallBack：http鉴权回调
@@ -40,10 +38,10 @@
 
 ## 😁项目组成
 1. 本项目基于Spring Boot 2.7.12版本，使用undertow作为web容器，使用knife4j作为接口文档,
-2. 本项目基于2023.04.01拉取ZLMediaKit master分支代码编译的ZLM4J开发
-
+2. 本项目基于最新ZLM4J开发完成
 ## 😁常见问题
-1.在 windows 环境运行出现 java.lang.UnsatisfiedLinkError 问题，请安装 openssl 库 参见OpenSSL下载或者复制libssl-3-x64.dll&libcrypto-3-x64.dll到系统动态链接库下
+
+1. 参见[ZLM4J常见问题 ](https://ux5phie02ut.feishu.cn/wiki/SzIAwyxnpilVMlkccS4cfJFGn1g)
 ## 😁学习探讨
  <p align="center">
   <a >

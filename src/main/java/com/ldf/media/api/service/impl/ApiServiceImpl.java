@@ -181,7 +181,6 @@ public class ApiServiceImpl implements IApiService {
                 String bufferList =    ZLM_API.mk_ini_get_option(ini, "object.BufferList");
                 String rtpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtpPacket");
                 String rtmpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtmpPacket");
-                //帮我把上面值传到statistic中
                 statistic.setMediaSource(Long.valueOf(mediaSource));
                 statistic.setMultiMediaSourceMuxer(Long.valueOf(multiMediaSourceMuxer));
                 statistic.setTcpServer(Long.valueOf(tcpServer));
