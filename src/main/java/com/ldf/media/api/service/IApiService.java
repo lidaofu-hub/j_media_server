@@ -2,6 +2,7 @@ package com.ldf.media.api.service;
 
 import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
+import com.ldf.media.api.model.result.Statistic;
 
 import java.util.List;
 
@@ -25,4 +26,6 @@ public interface IApiService {
     Boolean stopRecord(StopRecordParam param);
 
     Boolean isRecording(RecordStatusParam param);
+
+    Statistic getStatistic();
 }

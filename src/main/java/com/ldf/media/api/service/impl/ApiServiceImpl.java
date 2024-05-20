@@ -1,18 +1,19 @@
 package com.ldf.media.api.service.impl;
 
 import cn.hutool.core.lang.Assert;
+import com.aizuda.zlm4j.callback.IMKGetStatisticCallBack;
+import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
 import com.aizuda.zlm4j.structure.MK_INI;
+import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
+import com.aizuda.zlm4j.structure.MK_PROXY_PLAYER;
+import com.aizuda.zlm4j.structure.MK_TRACK;
 import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
+import com.ldf.media.api.model.result.Statistic;
 import com.ldf.media.api.model.result.Track;
 import com.ldf.media.api.service.IApiService;
 import com.ldf.media.callback.MKSourceFindCallBack;
 import com.ldf.media.constants.MediaServerConstants;
-import com.ldf.media.context.MediaServerContext;
-import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
-import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
-import com.aizuda.zlm4j.structure.MK_PROXY_PLAYER;
-import com.aizuda.zlm4j.structure.MK_TRACK;
 import com.sun.jna.Pointer;
 import org.springframework.stereotype.Service;
 
@@ -37,20 +38,20 @@ public class ApiServiceImpl implements IApiService {
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
         //创建拉流代理
         MK_INI option = ZLM_API.mk_ini_create();
-        ZLM_API.mk_ini_set_option_int(option,"enable_mp4",param.getEnableMp4());
-        ZLM_API.mk_ini_set_option_int(option,"enable_audio",param.getEnableAudio());
-        ZLM_API.mk_ini_set_option_int(option,"enable_fmp4",param.getEnableFmp4());
-        ZLM_API.mk_ini_set_option_int(option,"enable_ts",param.getEnableTs());
-        ZLM_API.mk_ini_set_option_int(option,"enable_hls",param.getEnableHls());
-        ZLM_API.mk_ini_set_option_int(option,"enable_rtsp",param.getEnableRtsp());
-        ZLM_API.mk_ini_set_option_int(option,"enable_rtmp",param.getEnableRtmp());
-        ZLM_API.mk_ini_set_option_int(option,"mp4_max_second",param.getMp4MaxSecond());
+        ZLM_API.mk_ini_set_option_int(option, "enable_mp4", param.getEnableMp4());
+        ZLM_API.mk_ini_set_option_int(option, "enable_audio", param.getEnableAudio());
+        ZLM_API.mk_ini_set_option_int(option, "enable_fmp4", param.getEnableFmp4());
+        ZLM_API.mk_ini_set_option_int(option, "enable_ts", param.getEnableTs());
+        ZLM_API.mk_ini_set_option_int(option, "enable_hls", param.getEnableHls());
+        ZLM_API.mk_ini_set_option_int(option, "enable_rtsp", param.getEnableRtsp());
+        ZLM_API.mk_ini_set_option_int(option, "enable_rtmp", param.getEnableRtmp());
+        ZLM_API.mk_ini_set_option_int(option, "mp4_max_second", param.getMp4MaxSecond());
         //ZLM_API.mk_ini_set_option(option,"mp4_save_path","D:/record");
         //ZLM_API.mk_ini_set_option(option,"hls_save_path","D:/record");
-        ZLM_API.mk_ini_set_option_int(option,"add_mute_audio",0);
-        ZLM_API.mk_ini_set_option_int(option,"auto_close",1);
+        ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
+        ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
         //创建拉流代理
-        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(),option);
+        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option);
         //删除配置
         ZLM_API.mk_ini_release(option);
         //回调关闭时间
@@ -158,4 +159,49 @@ public class ApiServiceImpl implements IApiService {
         return ret == 1;
     }
 
+    @Override
+    public Statistic getStatistic() {
+        Statistic statistic = new Statistic();
+        IMKGetStatisticCallBack imkGetStatisticCallBack = new IMKGetStatisticCallBack() {
+            @Override
+            public void invoke(Pointer user_data, MK_INI ini) {
+                String mediaSource = ZLM_API.mk_ini_get_option(ini, "object.MediaSource");
+                String multiMediaSourceMuxer = ZLM_API.mk_ini_get_option(ini, "object.MultiMediaSourceMuxer");
+                String tcpServer = ZLM_API.mk_ini_get_option(ini, "object.TcpServer");
+                String tcpSession = ZLM_API.mk_ini_get_option(ini, "object.TcpSession");
+                String udpServer = ZLM_API.mk_ini_get_option(ini, "object.UdpServer");
+                String udpSession =  ZLM_API.mk_ini_get_option(ini, "object.UdpSession");
+                String tcpClient =   ZLM_API.mk_ini_get_option(ini, "object.TcpClient");
+                String socket =   ZLM_API.mk_ini_get_option(ini, "object.Socket");
+                String frameImp =    ZLM_API.mk_ini_get_option(ini, "object.FrameImp");
+                String frame =    ZLM_API.mk_ini_get_option(ini, "object.Frame");
+                String buffer =    ZLM_API.mk_ini_get_option(ini, "object.Buffer");
+                String bufferRaw =   ZLM_API.mk_ini_get_option(ini, "object.BufferRaw");
+                String bufferLikeString =   ZLM_API.mk_ini_get_option(ini, "object.BufferLikeString");
+                String bufferList =    ZLM_API.mk_ini_get_option(ini, "object.BufferList");
+                String rtpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtpPacket");
+                String rtmpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtmpPacket");
+                //帮我把上面值传到statistic中
+                statistic.setMediaSource(Long.valueOf(mediaSource));
+                statistic.setMultiMediaSourceMuxer(Long.valueOf(multiMediaSourceMuxer));
+                statistic.setTcpServer(Long.valueOf(tcpServer));
+                statistic.setTcpSession(Long.valueOf(tcpSession));
+                statistic.setUdpServer(Long.valueOf(udpServer));
+                statistic.setUdpSession(Long.valueOf(udpSession));
+                statistic.setTcpClient(Long.valueOf(tcpClient));
+                statistic.setSocket(Long.valueOf(socket));
+                statistic.setFrameImp(Long.valueOf(frameImp));
+                statistic.setFrame(Long.valueOf(frame));
+                statistic.setBuffer(Long.valueOf(buffer));
+                statistic.setBufferRaw(Long.valueOf(bufferRaw));
+                statistic.setBufferLikeString(Long.valueOf(bufferLikeString));
+                statistic.setBufferList(Long.valueOf(bufferList));
+                statistic.setRtpPacket(Long.valueOf(rtpPacket));
+                statistic.setRtmpPacket(Long.valueOf(rtmpPacket));
+                ZLM_API.mk_ini_release(ini);
+            }
+        };
+        ZLM_API.mk_get_statistic(imkGetStatisticCallBack, null, null);
+        return statistic;
+    }
 }

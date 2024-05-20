@@ -3,6 +3,7 @@ package com.ldf.media.api.controller;
 import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
 import com.ldf.media.api.model.result.Result;
+import com.ldf.media.api.model.result.Statistic;
 import com.ldf.media.api.service.IApiService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -76,5 +77,11 @@ public class ApiController {
         return new Result<>(flag);
     }
 
+    @ApiOperation(value = "获取内存信息")
+    @GetMapping("/getStatistic")
+    public Result<Statistic> getStatistic() {
+        Statistic statistic = iApiService.getStatistic();
+        return new Result<>(statistic);
+    }
 
 }

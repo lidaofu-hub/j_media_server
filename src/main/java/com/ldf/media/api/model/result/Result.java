@@ -4,6 +4,8 @@ import com.ldf.media.enums.ResultEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 返回类
  *
@@ -12,7 +14,8 @@ import lombok.Data;
  **/
 @Data
 @AllArgsConstructor
-public class Result<T> {
+public class Result<T> implements Serializable {
+    private static final long serialVersionUID = 1;
     /**
      * 状态码
      */
