@@ -25,7 +25,7 @@ public class StreamProxyParam {
 
     @NotBlank(message = "流id不为空")
     @ApiModelProperty(value = "流id",required = true)
-    private String stream;
+    private String stream_id;
 
     @NotBlank(message = "代理流地址不为空")
     @ApiModelProperty(value = "代理流地址",required = true)

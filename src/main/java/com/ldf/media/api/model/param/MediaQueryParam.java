@@ -9,28 +9,28 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 关闭流请求参数
+ * 流查询参数
  *
  * @author lidaofu
  * @since 2023/3/30
  **/
 @Data
-@ApiModel(value = "CloseStreamsParam对象", description = "关闭流请求参数")
-public class CloseStreamsParam implements Serializable {
+@ApiModel(value = "MediaQueryParam对象", description = "流查询参数")
+public class MediaQueryParam implements Serializable {
 
     private static final long serialVersionUID = 1;
 
-    @ApiModelProperty(value = "app")
+
+    @NotBlank(message = "app不为空")
+    @ApiModelProperty(value = "app",required = true)
     private String app;
 
-    @ApiModelProperty(value = "流id")
+    @NotBlank(message = "流id不为空")
+    @ApiModelProperty(value = "流id",required = true)
     private String stream_id;
 
-    @ApiModelProperty(value = "是否强制关闭")
-    private Integer force=1;
-
-    @ApiModelProperty(value = "流的协议")
+    @NotBlank(message = "流的协议不为空")
+    @ApiModelProperty(value = "流的协议",required = true)
     private String schema;
-
 
 }

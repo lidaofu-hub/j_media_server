@@ -3,22 +3,26 @@ package com.ldf.media.api.service.impl;
 import cn.hutool.core.lang.Assert;
 import com.aizuda.zlm4j.callback.IMKGetStatisticCallBack;
 import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
-import com.aizuda.zlm4j.structure.MK_INI;
-import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
-import com.aizuda.zlm4j.structure.MK_PROXY_PLAYER;
-import com.aizuda.zlm4j.structure.MK_TRACK;
+import com.aizuda.zlm4j.callback.IMKRtpServerDetachCallBack;
+import com.aizuda.zlm4j.structure.*;
 import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
+import com.ldf.media.api.model.result.RtpServerResult;
 import com.ldf.media.api.model.result.Statistic;
 import com.ldf.media.api.model.result.Track;
 import com.ldf.media.api.service.IApiService;
 import com.ldf.media.callback.MKSourceFindCallBack;
 import com.ldf.media.constants.MediaServerConstants;
+import com.ldf.media.context.MediaServerContext;
 import com.sun.jna.Pointer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
@@ -31,10 +35,24 @@ import static com.ldf.media.context.MediaServerContext.ZLM_API;
  **/
 @Service
 public class ApiServiceImpl implements IApiService {
+    @Autowired
+    private MediaServerContext context;
+
+    /**
+     * rtp服务列表
+     */
+    private static final Map<String,MK_RTP_SERVER> RTP_SERVER_MAP = new HashMap<>();
+
+    /**
+     * rtp服务断开回调
+ }
+     */
+    private static final Map<String, IMKRtpServerDetachCallBack> RTP_SERVER_DETACH_CALL_BACK_MAP = new HashMap<>();
+
     @Override
     public void addStreamProxy(StreamProxyParam param) {
         //查询流是是否存在
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
         //创建拉流代理
         MK_INI option = ZLM_API.mk_ini_create();
@@ -51,7 +69,7 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
         ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
         //创建拉流代理
-        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option);
+        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), option);
         //删除配置
         ZLM_API.mk_ini_release(option);
         //回调关闭时间
@@ -69,7 +87,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public Integer closeStream(CloseStreamParam param) {
         //查询流是是否存在
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
         Assert.notNull(mkMediaSource, "当前流不在线");
         return ZLM_API.mk_media_source_close(mkMediaSource, param.getForce());
     }
@@ -80,7 +98,7 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_media_source_for_each(Pointer.NULL, new MKSourceFindCallBack((MK_MEDIA_SOURCE ctx) -> {
             int status = ZLM_API.mk_media_source_close(ctx, param.getForce());
             count.set(count.get() + status);
-        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
         return count.get();
     }
 
@@ -137,25 +155,90 @@ public class ApiServiceImpl implements IApiService {
             }
             mediaInfoResult.setTracks(tracks);
             list.add(mediaInfoResult);
-        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
         return list;
     }
 
+
+    @Override
+    public Boolean isMediaOnline(MediaQueryParam param) {
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        return mkMediaSource != null;
+    }
+
+    @Override
+    public MediaInfoResult getMediaInfo(MediaQueryParam param) {
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        if (mkMediaSource != null){
+            String app = ZLM_API.mk_media_source_get_app(mkMediaSource);
+            String stream = ZLM_API.mk_media_source_get_stream(mkMediaSource);
+            String schema = ZLM_API.mk_media_source_get_schema(mkMediaSource);
+            int readerCount = ZLM_API.mk_media_source_get_reader_count(mkMediaSource);
+            int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(mkMediaSource);
+            int trackSize = ZLM_API.mk_media_source_get_track_count(mkMediaSource);
+            int originType = ZLM_API.mk_media_source_get_origin_type(mkMediaSource);
+            String originUrl = ZLM_API.mk_media_source_get_origin_url(mkMediaSource);
+            long createStamp = ZLM_API.mk_media_source_get_create_stamp(mkMediaSource);
+            MediaInfoResult mediaInfoResult = new MediaInfoResult();
+            mediaInfoResult.setApp(app);
+            mediaInfoResult.setStream(stream);
+            mediaInfoResult.setSchema(schema);
+            mediaInfoResult.setReaderCount(readerCount);
+            mediaInfoResult.setTotalReaderCount(totalReaderCount);
+            mediaInfoResult.setOriginType(originType);
+            mediaInfoResult.setOriginUrl(originUrl);
+            mediaInfoResult.setCreateStamp(createStamp);
+            List<Track> tracks = new ArrayList<>();
+            for (int i = 0; i < trackSize; i++) {
+                MK_TRACK mkTrack = ZLM_API.mk_media_source_get_track(mkMediaSource, i);
+                Track track = new Track();
+                int codec_id = ZLM_API.mk_track_codec_id(mkTrack);
+                String codec_name = ZLM_API.mk_track_codec_name(mkTrack);
+                int bit_rate = ZLM_API.mk_track_bit_rate(mkTrack);
+                int is_video = ZLM_API.mk_track_is_video(mkTrack);
+                track.setCodec_id(codec_id);
+                track.setCodec_id_name(codec_name);
+                track.setBit_rate(bit_rate);
+                track.setIs_video(is_video);
+                if (is_video == 1) {
+                    int width = ZLM_API.mk_track_video_width(mkTrack);
+                    track.setWidth(width);
+                    int height = ZLM_API.mk_track_video_height(mkTrack);
+                    track.setHeight(height);
+                    int fps = ZLM_API.mk_track_video_fps(mkTrack);
+                    track.setFps(fps);
+                } else {
+                    int sample_rate = ZLM_API.mk_track_audio_sample_rate(mkTrack);
+                    int audio_channel = ZLM_API.mk_track_audio_channel(mkTrack);
+                    int audio_sample_bit = ZLM_API.mk_track_audio_sample_bit(mkTrack);
+                    track.setSample_rate(sample_rate);
+                    track.setAudio_channel(audio_channel);
+                    track.setAudio_sample_bit(audio_sample_bit);
+                }
+                tracks.add(track);
+            }
+            mediaInfoResult.setTracks(tracks);
+            return mediaInfoResult;
+        }
+        return null;
+    }
+
+
     @Override
     public Boolean startRecord(StartRecordParam param) {
-        int ret = ZLM_API.mk_recorder_start(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), param.getCustomized_path(), param.getMax_second());
+        int ret = ZLM_API.mk_recorder_start(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), param.getCustomized_path(), param.getMax_second());
         return ret == 1;
     }
 
     @Override
     public Boolean stopRecord(StopRecordParam param) {
-        int ret = ZLM_API.mk_recorder_stop(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        int ret = ZLM_API.mk_recorder_stop(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
         return ret == 1;
     }
 
     @Override
     public Boolean isRecording(RecordStatusParam param) {
-        int ret = ZLM_API.mk_recorder_is_recording(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
+        int ret = ZLM_API.mk_recorder_is_recording(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
         return ret == 1;
     }
 
@@ -170,17 +253,17 @@ public class ApiServiceImpl implements IApiService {
                 String tcpServer = ZLM_API.mk_ini_get_option(ini, "object.TcpServer");
                 String tcpSession = ZLM_API.mk_ini_get_option(ini, "object.TcpSession");
                 String udpServer = ZLM_API.mk_ini_get_option(ini, "object.UdpServer");
-                String udpSession =  ZLM_API.mk_ini_get_option(ini, "object.UdpSession");
-                String tcpClient =   ZLM_API.mk_ini_get_option(ini, "object.TcpClient");
-                String socket =   ZLM_API.mk_ini_get_option(ini, "object.Socket");
-                String frameImp =    ZLM_API.mk_ini_get_option(ini, "object.FrameImp");
-                String frame =    ZLM_API.mk_ini_get_option(ini, "object.Frame");
-                String buffer =    ZLM_API.mk_ini_get_option(ini, "object.Buffer");
-                String bufferRaw =   ZLM_API.mk_ini_get_option(ini, "object.BufferRaw");
-                String bufferLikeString =   ZLM_API.mk_ini_get_option(ini, "object.BufferLikeString");
-                String bufferList =    ZLM_API.mk_ini_get_option(ini, "object.BufferList");
-                String rtpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtpPacket");
-                String rtmpPacket =    ZLM_API.mk_ini_get_option(ini, "object.RtmpPacket");
+                String udpSession = ZLM_API.mk_ini_get_option(ini, "object.UdpSession");
+                String tcpClient = ZLM_API.mk_ini_get_option(ini, "object.TcpClient");
+                String socket = ZLM_API.mk_ini_get_option(ini, "object.Socket");
+                String frameImp = ZLM_API.mk_ini_get_option(ini, "object.FrameImp");
+                String frame = ZLM_API.mk_ini_get_option(ini, "object.Frame");
+                String buffer = ZLM_API.mk_ini_get_option(ini, "object.Buffer");
+                String bufferRaw = ZLM_API.mk_ini_get_option(ini, "object.BufferRaw");
+                String bufferLikeString = ZLM_API.mk_ini_get_option(ini, "object.BufferLikeString");
+                String bufferList = ZLM_API.mk_ini_get_option(ini, "object.BufferList");
+                String rtpPacket = ZLM_API.mk_ini_get_option(ini, "object.RtpPacket");
+                String rtmpPacket = ZLM_API.mk_ini_get_option(ini, "object.RtmpPacket");
                 statistic.setMediaSource(Long.valueOf(mediaSource));
                 statistic.setMultiMediaSourceMuxer(Long.valueOf(multiMediaSourceMuxer));
                 statistic.setTcpServer(Long.valueOf(tcpServer));
@@ -203,4 +286,80 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_get_statistic(imkGetStatisticCallBack, null, null);
         return statistic;
     }
+
+    @Override
+    public String getServerConfig() {
+        Pointer pointer = ZLM_API.mk_ini_dump_string(MediaServerContext.MK_INI);
+        String string = pointer.getString(0);
+        ZLM_API.mk_free(pointer);
+        return string;
+    }
+
+    @Override
+    public Boolean restartServer() {
+        context.stopMediaServer();
+        return context.startMediaServer();
+    }
+
+    @Override
+    public Integer setServerConfig(Map<String, String[]> parameterMap) {
+        AtomicInteger count = new AtomicInteger();
+        parameterMap.forEach((key, value) -> {
+            if (value[0].matches("\\d+")) {
+                ZLM_API.mk_ini_set_option_int(MediaServerContext.MK_INI, key, Integer.parseInt(value[0]));
+            } else {
+                ZLM_API.mk_ini_set_option(MediaServerContext.MK_INI, key, value[0]);
+            }
+            count.getAndIncrement();
+        });
+        return count.get();
+    }
+
+    @Override
+    public Integer openRtpServer(OpenRtpServerParam param) {
+        if (RTP_SERVER_MAP.containsKey(param.getStream_id())){
+            return -1;
+        }
+        MK_RTP_SERVER mkRtpServer= ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream_id());
+        if (mkRtpServer == null){
+            return -1;
+        }
+        short i = ZLM_API.mk_rtp_server_port(mkRtpServer);
+        //监听rtp服务器断开事件
+        IMKRtpServerDetachCallBack imkRtpServerDetachCallBack = user_data -> {
+            RTP_SERVER_MAP.remove(param.getStream_id());
+            RTP_SERVER_DETACH_CALL_BACK_MAP.remove(param.getStream_id());
+        };
+        ZLM_API.mk_rtp_server_set_on_detach(mkRtpServer,imkRtpServerDetachCallBack,null );
+        RTP_SERVER_MAP.put(param.getStream_id(), mkRtpServer);
+        RTP_SERVER_DETACH_CALL_BACK_MAP.put(param.getStream_id(), imkRtpServerDetachCallBack);
+        return (int) i;
+    }
+
+    @Override
+    public Integer closeRtpServer(String streamId) {
+        MK_RTP_SERVER mkRtpServer = RTP_SERVER_MAP.get(streamId);
+        if (mkRtpServer != null){
+            ZLM_API.mk_rtp_server_release(mkRtpServer);
+            RTP_SERVER_MAP.remove(streamId);
+            RTP_SERVER_DETACH_CALL_BACK_MAP.remove(streamId);
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    public List<RtpServerResult> listRtpServer() {
+        List<RtpServerResult> rtpServerResults = new ArrayList<>();
+        if (RTP_SERVER_MAP.size() > 0){
+            RTP_SERVER_MAP.forEach((key, value) -> {
+                RtpServerResult rtpServerResult = new RtpServerResult();
+                rtpServerResult.setPort((int)ZLM_API.mk_rtp_server_port(value));
+                rtpServerResult.setStream_id(key);
+                rtpServerResults.add(rtpServerResult);
+            });
+        }
+        return rtpServerResults;
+    }
+
 }

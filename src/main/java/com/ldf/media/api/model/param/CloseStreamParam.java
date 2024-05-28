@@ -27,7 +27,7 @@ public class CloseStreamParam  implements Serializable {
 
     @NotBlank(message = "流id不为空")
     @ApiModelProperty(value = "流id",required = true)
-    private String stream;
+    private String stream_id;
 
     @NotNull(message = "是否强制关闭不为空")
     @ApiModelProperty(value = "是否强制关闭",required = true)

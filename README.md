@@ -4,15 +4,24 @@
 
 本项目可以作为[j_zlm_sdk](https://github.com/lidaofu-hub/j_zlm_sdk)使用示例代码。不重复造流媒体服务器轮子，只做代码集成示例。
 
+本项目接口风格兼容ZLMediaKit REST API
+
 ## 😁项目功能
 - **接口**（可以使用knife4j）：
     - 拉流代理接口：/index/api/addStreamProxy
     - 关闭流接口：/index/api/close_stream&/index/api/close_streams
     - 在线流列表接口：/index/api/getMediaList
+    - 流详情：/index/api/getMediaInfo
+    - 流是否在线：/index/api/isMediaOnline
     - 开始录像接口：/index/api/startRecord
     - 停止录像接口：/index/api/stopRecord
     - 获取录像状态接口：/index/api/isRecording
     - 获取内存资源信息：/index/getStatistic
+    - 获取服务器配置：/index/getServerConfig
+    - 设置服务器配置：/index/setServerConfig
+    - 开启rtp服务：/index/openRtpServer
+    - 关闭rtp服务：/index/closeRtpServer
+    - 获取rtp服务列表：/index/listRtpServer
     - 开发中：😁
 - **回调实现**：
     - MKHttpAccessCallBack：http鉴权回调

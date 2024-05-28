@@ -22,13 +22,13 @@ public class GetMediaListParam implements Serializable {
     private static final long serialVersionUID = 1;
 
 
-    @ApiModelProperty(value = "app",required = true)
+    @ApiModelProperty(value = "app")
     private String app;
 
-    @ApiModelProperty(value = "流id",required = true)
-    private String stream;
+    @ApiModelProperty(value = "流id")
+    private String stream_id;
 
-    @ApiModelProperty(value = "流的协议",required = true)
+    @ApiModelProperty(value = "流的协议")
     private String schema;
 
 }
