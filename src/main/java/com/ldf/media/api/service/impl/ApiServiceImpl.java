@@ -52,7 +52,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public void addStreamProxy(StreamProxyParam param) {
         //查询流是是否存在
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
         //创建拉流代理
         MK_INI option = ZLM_API.mk_ini_create();
@@ -69,7 +69,7 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
         ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
         //创建拉流代理
-        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), option);
+        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option);
         //删除配置
         ZLM_API.mk_ini_release(option);
         //回调关闭时间
@@ -87,7 +87,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public Integer closeStream(CloseStreamParam param) {
         //查询流是是否存在
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         Assert.notNull(mkMediaSource, "当前流不在线");
         return ZLM_API.mk_media_source_close(mkMediaSource, param.getForce());
     }
@@ -98,7 +98,7 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_media_source_for_each(Pointer.NULL, new MKSourceFindCallBack((MK_MEDIA_SOURCE ctx) -> {
             int status = ZLM_API.mk_media_source_close(ctx, param.getForce());
             count.set(count.get() + status);
-        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
+        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
         return count.get();
     }
 
@@ -155,20 +155,20 @@ public class ApiServiceImpl implements IApiService {
             }
             mediaInfoResult.setTracks(tracks);
             list.add(mediaInfoResult);
-        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
+        }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
         return list;
     }
 
 
     @Override
     public Boolean isMediaOnline(MediaQueryParam param) {
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         return mkMediaSource != null;
     }
 
     @Override
     public MediaInfoResult getMediaInfo(MediaQueryParam param) {
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), 0);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         if (mkMediaSource != null){
             String app = ZLM_API.mk_media_source_get_app(mkMediaSource);
             String stream = ZLM_API.mk_media_source_get_stream(mkMediaSource);
@@ -226,19 +226,19 @@ public class ApiServiceImpl implements IApiService {
 
     @Override
     public Boolean startRecord(StartRecordParam param) {
-        int ret = ZLM_API.mk_recorder_start(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id(), param.getCustomized_path(), param.getMax_second());
+        int ret = ZLM_API.mk_recorder_start(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), param.getCustomized_path(), param.getMax_second());
         return ret == 1;
     }
 
     @Override
     public Boolean stopRecord(StopRecordParam param) {
-        int ret = ZLM_API.mk_recorder_stop(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
+        int ret = ZLM_API.mk_recorder_stop(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
         return ret == 1;
     }
 
     @Override
     public Boolean isRecording(RecordStatusParam param) {
-        int ret = ZLM_API.mk_recorder_is_recording(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream_id());
+        int ret = ZLM_API.mk_recorder_is_recording(param.getType(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
         return ret == 1;
     }
 
@@ -317,22 +317,22 @@ public class ApiServiceImpl implements IApiService {
 
     @Override
     public Integer openRtpServer(OpenRtpServerParam param) {
-        if (RTP_SERVER_MAP.containsKey(param.getStream_id())){
+        if (RTP_SERVER_MAP.containsKey(param.getStream())){
             return -1;
         }
-        MK_RTP_SERVER mkRtpServer= ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream_id());
+        MK_RTP_SERVER mkRtpServer= ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream());
         if (mkRtpServer == null){
             return -1;
         }
         short i = ZLM_API.mk_rtp_server_port(mkRtpServer);
         //监听rtp服务器断开事件
         IMKRtpServerDetachCallBack imkRtpServerDetachCallBack = user_data -> {
-            RTP_SERVER_MAP.remove(param.getStream_id());
-            RTP_SERVER_DETACH_CALL_BACK_MAP.remove(param.getStream_id());
+            RTP_SERVER_MAP.remove(param.getStream());
+            RTP_SERVER_DETACH_CALL_BACK_MAP.remove(param.getStream());
         };
         ZLM_API.mk_rtp_server_set_on_detach(mkRtpServer,imkRtpServerDetachCallBack,null );
-        RTP_SERVER_MAP.put(param.getStream_id(), mkRtpServer);
-        RTP_SERVER_DETACH_CALL_BACK_MAP.put(param.getStream_id(), imkRtpServerDetachCallBack);
+        RTP_SERVER_MAP.put(param.getStream(), mkRtpServer);
+        RTP_SERVER_DETACH_CALL_BACK_MAP.put(param.getStream(), imkRtpServerDetachCallBack);
         return (int) i;
     }
 
@@ -355,7 +355,7 @@ public class ApiServiceImpl implements IApiService {
             RTP_SERVER_MAP.forEach((key, value) -> {
                 RtpServerResult rtpServerResult = new RtpServerResult();
                 rtpServerResult.setPort((int)ZLM_API.mk_rtp_server_port(value));
-                rtpServerResult.setStream_id(key);
+                rtpServerResult.setStream(key);
                 rtpServerResults.add(rtpServerResult);
             });
         }

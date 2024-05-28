@@ -24,7 +24,7 @@ public class CloseStreamsParam implements Serializable {
     private String app;
 
     @ApiModelProperty(value = "流id")
-    private String stream_id;
+    private String stream;
 
     @ApiModelProperty(value = "是否强制关闭")
     private Integer force=1;

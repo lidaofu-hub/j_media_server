@@ -45,7 +45,7 @@ public interface IApiService {
 
     Integer openRtpServer(OpenRtpServerParam param);
 
-    Integer closeRtpServer(String streamId);
+    Integer closeRtpServer(String stream);
 
     List<RtpServerResult> listRtpServer();
 }

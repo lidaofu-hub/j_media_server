@@ -26,7 +26,7 @@ public class GetMediaListParam implements Serializable {
     private String app;
 
     @ApiModelProperty(value = "流id")
-    private String stream_id;
+    private String stream;
 
     @ApiModelProperty(value = "流的协议")
     private String schema;

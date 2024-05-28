@@ -137,16 +137,31 @@ public class ApiController {
     }
 
     @ApiOperation(value = "关闭rtp服务")
-    @ApiImplicitParam(name = "stream_id", value = "流id", required = true)
+    @ApiImplicitParam(name = "stream", value = "流id", required = true)
     @RequestMapping(value = "/closeRtpServer", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Integer> closeRtpServer(@NotBlank(message = "流id不为空")@RequestParam(value = "stream_id") String stream_id) {
-        Integer status = iApiService.closeRtpServer(stream_id);
+    public Result<Integer> closeRtpServer(@NotBlank(message = "流id不为空")@RequestParam(value = "stream") String stream) {
+        Integer status = iApiService.closeRtpServer(stream);
         return new Result<>(status);
     }
 
     @ApiOperation(value = "获取所有RTP服务器")
     @RequestMapping(value = "/listRtpServer", method = {RequestMethod.POST, RequestMethod.GET})
     public Result<List<RtpServerResult>> listRtpServer() {
+        List<RtpServerResult> results = iApiService.listRtpServer();
+        return new Result<>(results);
+    }
+
+
+    @ApiOperation(value = "获取所有RTP服务器")
+    @RequestMapping(value = "/startSendRtp", method = {RequestMethod.POST, RequestMethod.GET})
+    public Result<List<RtpServerResult>> startSendRtp() {
+        List<RtpServerResult> results = iApiService.listRtpServer();
+        return new Result<>(results);
+    }
+
+    @ApiOperation(value = "获取所有RTP服务器")
+    @RequestMapping(value = "/stopSendRtp", method = {RequestMethod.POST, RequestMethod.GET})
+    public Result<List<RtpServerResult>> stopSendRtp() {
         List<RtpServerResult> results = iApiService.listRtpServer();
         return new Result<>(results);
     }

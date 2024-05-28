@@ -31,7 +31,7 @@ public class OpenRtpServerParam implements Serializable {
 
     @NotBlank(message = "流id不为空")
     @ApiModelProperty(value = "流id",required = true)
-    private String stream_id;
+    private String stream;
 
 
 }

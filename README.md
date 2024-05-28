@@ -16,12 +16,12 @@
     - 开始录像接口：/index/api/startRecord
     - 停止录像接口：/index/api/stopRecord
     - 获取录像状态接口：/index/api/isRecording
-    - 获取内存资源信息：/index/getStatistic
-    - 获取服务器配置：/index/getServerConfig
-    - 设置服务器配置：/index/setServerConfig
-    - 开启rtp服务：/index/openRtpServer
-    - 关闭rtp服务：/index/closeRtpServer
-    - 获取rtp服务列表：/index/listRtpServer
+    - 获取内存资源信息：/index/api/getStatistic
+    - 获取服务器配置：/index/api/getServerConfig
+    - 设置服务器配置：/index/api/setServerConfig
+    - 开启rtp服务：/index/api/openRtpServer
+    - 关闭rtp服务：/index/api/closeRtpServer
+    - 获取rtp服务列表：/index/api/listRtpServer
     - 开发中：😁
 - **回调实现**：
     - MKHttpAccessCallBack：http鉴权回调
