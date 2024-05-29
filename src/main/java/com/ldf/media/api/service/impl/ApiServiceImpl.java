@@ -69,7 +69,15 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
         ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
         //创建拉流代理
-        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option);
+        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create4(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option,param.getRetryCount());
+        //设置超时时间
+        if (param.getTimeoutSec()!=null){
+            ZLM_API.mk_proxy_player_set_option(mk_proxy, "protocol_timeout_ms", String.valueOf(param.getTimeoutSec() * 1000));
+        }
+        //设置拉流方式
+        if (param.getRtpType()!=null){
+            ZLM_API.mk_proxy_player_set_option(mk_proxy, "rtp_type", param.getRtpType().toString());
+        }
         //删除配置
         ZLM_API.mk_ini_release(option);
         //回调关闭时间
@@ -77,7 +85,7 @@ public class ApiServiceImpl implements IApiService {
             //这里Pointer是ZLM维护的不需要我们释放 遵循谁申请谁释放原则
             ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
         };
-        ZLM_API.mk_proxy_player_set_option(mk_proxy, "rtp_type", param.getRtpType().toString());
+
         //开始播放
         ZLM_API.mk_proxy_player_play(mk_proxy, param.getUrl());
         //添加代理关闭回调 并把代理客户端传过去释放
