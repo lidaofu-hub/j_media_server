@@ -73,7 +73,7 @@
             <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
             <version>4.5.0</version>
         </dependency>
-        <!--需要本地instal-->
+        <!--自1.0.8后不需要本地instal-->
         <dependency>
             <groupId>com.aizuda</groupId>
             <artifactId>zlm4j</artifactId>
