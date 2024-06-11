@@ -1,8 +1,9 @@
 package com.ldf.media.api.service.impl;
 
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.RandomUtil;
 import com.aizuda.zlm4j.callback.IMKGetStatisticCallBack;
-import com.aizuda.zlm4j.callback.IMKProxyPlayCloseCallBack;
+import com.aizuda.zlm4j.callback.IMKProxyPlayerCallBack;
 import com.aizuda.zlm4j.callback.IMKRtpServerDetachCallBack;
 import com.aizuda.zlm4j.structure.*;
 import com.ldf.media.api.model.param.*;
@@ -15,6 +16,7 @@ import com.ldf.media.callback.MKSourceFindCallBack;
 import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.context.MediaServerContext;
 import com.sun.jna.Pointer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,24 +35,35 @@ import static com.ldf.media.context.MediaServerContext.ZLM_API;
  * @author lidaofu
  * @since 2023/11/29
  **/
+@Slf4j
 @Service
 public class ApiServiceImpl implements IApiService {
     @Autowired
     private MediaServerContext context;
 
     /**
+     * 拉流代理列表
+     */
+    private static final Map<String, MK_PROXY_PLAYER> PROXY_PLAYER_MAP = new HashMap<>();
+
+    /**
+     * 拉流代理关闭回调
+     */
+    private static final Map<String, IMKProxyPlayerCallBack> PROXY_PLAYER_CLOSE_MAP = new HashMap<>();
+
+    /**
      * rtp服务列表
      */
-    private static final Map<String,MK_RTP_SERVER> RTP_SERVER_MAP = new HashMap<>();
+    private static final Map<String, MK_RTP_SERVER> RTP_SERVER_MAP = new HashMap<>();
+
 
     /**
      * rtp服务断开回调
- }
      */
     private static final Map<String, IMKRtpServerDetachCallBack> RTP_SERVER_DETACH_CALL_BACK_MAP = new HashMap<>();
 
     @Override
-    public void addStreamProxy(StreamProxyParam param) {
+    public String addStreamProxy(StreamProxyParam param) {
         //查询流是是否存在
         MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
@@ -69,27 +82,53 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
         ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
         //创建拉流代理
-        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create4(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option,param.getRetryCount());
+        MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create4(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option, param.getRetryCount());
         //设置超时时间
-        if (param.getTimeoutSec()!=null){
+        if (param.getTimeoutSec() != null) {
             ZLM_API.mk_proxy_player_set_option(mk_proxy, "protocol_timeout_ms", String.valueOf(param.getTimeoutSec() * 1000));
         }
         //设置拉流方式
-        if (param.getRtpType()!=null){
+        if (param.getRtpType() != null) {
             ZLM_API.mk_proxy_player_set_option(mk_proxy, "rtp_type", param.getRtpType().toString());
         }
         //删除配置
         ZLM_API.mk_ini_release(option);
-        //回调关闭时间
-        IMKProxyPlayCloseCallBack imkProxyPlayCloseCallBack = (pUser, err, what, sys_err) -> {
+        String key = RandomUtil.randomString(10);
+        //第一次代理结果获取
+        IMKProxyPlayerCallBack imkProxyPlayerCallBack = new IMKProxyPlayerCallBack() {
+            @Override
+            public void invoke(Pointer pUser, int err, String what, int sys_err) {
+                if (err != 0) {
+                    log.warn("【MediaServer】拉流代理失败：{}", what);
+                }
+            }
+        };
+        ZLM_API.mk_proxy_player_set_on_play_result(mk_proxy, imkProxyPlayerCallBack, mk_proxy.getPointer(), null);
+        //回调关闭事件
+        IMKProxyPlayerCallBack imkProxyPlayCloseCallBack = (pUser, err, what, sys_err) -> {
             //这里Pointer是ZLM维护的不需要我们释放 遵循谁申请谁释放原则
             ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
+            PROXY_PLAYER_CLOSE_MAP.remove(key);
+            PROXY_PLAYER_MAP.remove(key);
+            log.info("【MediaServer】拉流代理关闭");
         };
-
+        PROXY_PLAYER_CLOSE_MAP.put(key, imkProxyPlayCloseCallBack);
+        PROXY_PLAYER_MAP.put(key, mk_proxy);
         //开始播放
         ZLM_API.mk_proxy_player_play(mk_proxy, param.getUrl());
         //添加代理关闭回调 并把代理客户端传过去释放
         ZLM_API.mk_proxy_player_set_on_close(mk_proxy, imkProxyPlayCloseCallBack, mk_proxy.getPointer());
+        return key;
+    }
+
+    @Override
+    public Boolean delStreamProxy(String key) {
+        MK_PROXY_PLAYER mkProxyPlayer = PROXY_PLAYER_MAP.get(key);
+        if (mkProxyPlayer != null) {
+            ZLM_API.mk_proxy_player_release(mkProxyPlayer);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -177,7 +216,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public MediaInfoResult getMediaInfo(MediaQueryParam param) {
         MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
-        if (mkMediaSource != null){
+        if (mkMediaSource != null) {
             String app = ZLM_API.mk_media_source_get_app(mkMediaSource);
             String stream = ZLM_API.mk_media_source_get_stream(mkMediaSource);
             String schema = ZLM_API.mk_media_source_get_schema(mkMediaSource);
@@ -325,11 +364,11 @@ public class ApiServiceImpl implements IApiService {
 
     @Override
     public Integer openRtpServer(OpenRtpServerParam param) {
-        if (RTP_SERVER_MAP.containsKey(param.getStream())){
+        if (RTP_SERVER_MAP.containsKey(param.getStream())) {
             return -1;
         }
-        MK_RTP_SERVER mkRtpServer= ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream());
-        if (mkRtpServer == null){
+        MK_RTP_SERVER mkRtpServer = ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream());
+        if (mkRtpServer == null) {
             return -1;
         }
         short i = ZLM_API.mk_rtp_server_port(mkRtpServer);
@@ -338,7 +377,7 @@ public class ApiServiceImpl implements IApiService {
             RTP_SERVER_MAP.remove(param.getStream());
             RTP_SERVER_DETACH_CALL_BACK_MAP.remove(param.getStream());
         };
-        ZLM_API.mk_rtp_server_set_on_detach(mkRtpServer,imkRtpServerDetachCallBack,null );
+        ZLM_API.mk_rtp_server_set_on_detach(mkRtpServer, imkRtpServerDetachCallBack, null);
         RTP_SERVER_MAP.put(param.getStream(), mkRtpServer);
         RTP_SERVER_DETACH_CALL_BACK_MAP.put(param.getStream(), imkRtpServerDetachCallBack);
         return (int) i;
@@ -347,7 +386,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public Integer closeRtpServer(String streamId) {
         MK_RTP_SERVER mkRtpServer = RTP_SERVER_MAP.get(streamId);
-        if (mkRtpServer != null){
+        if (mkRtpServer != null) {
             ZLM_API.mk_rtp_server_release(mkRtpServer);
             RTP_SERVER_MAP.remove(streamId);
             RTP_SERVER_DETACH_CALL_BACK_MAP.remove(streamId);
@@ -359,10 +398,10 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public List<RtpServerResult> listRtpServer() {
         List<RtpServerResult> rtpServerResults = new ArrayList<>();
-        if (RTP_SERVER_MAP.size() > 0){
+        if (RTP_SERVER_MAP.size() > 0) {
             RTP_SERVER_MAP.forEach((key, value) -> {
                 RtpServerResult rtpServerResult = new RtpServerResult();
-                rtpServerResult.setPort((int)ZLM_API.mk_rtp_server_port(value));
+                rtpServerResult.setPort((int) ZLM_API.mk_rtp_server_port(value));
                 rtpServerResult.setStream(key);
                 rtpServerResults.add(rtpServerResult);
             });

@@ -16,7 +16,9 @@ import java.util.Map;
  **/
 public interface IApiService {
 
-    void addStreamProxy(StreamProxyParam param);
+    String addStreamProxy(StreamProxyParam param);
+
+    Boolean delStreamProxy(String key);
 
     Integer closeStream(CloseStreamParam param);
 
@@ -48,4 +50,5 @@ public interface IApiService {
     Integer closeRtpServer(String stream);
 
     List<RtpServerResult> listRtpServer();
+
 }

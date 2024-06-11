@@ -9,6 +9,7 @@
 ## 😁项目功能
 - **接口**（可以使用knife4j）：
     - 拉流代理接口：/index/api/addStreamProxy
+    - 关闭拉流代理接口：/index/api/delStreamProxy
     - 关闭流接口：/index/api/close_stream&/index/api/close_streams
     - 在线流列表接口：/index/api/getMediaList
     - 流详情：/index/api/getMediaInfo
