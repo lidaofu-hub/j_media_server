@@ -160,10 +160,10 @@ public class ApiServiceImpl implements IApiService {
             int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(ctx);
             int trackSize = ZLM_API.mk_media_source_get_track_count(ctx);
             int originType = ZLM_API.mk_media_source_get_origin_type(ctx);
-            String originTypeStr = ZLM_API.mk_media_source_get_origin_type_str(ctx);
+            Pointer originTypePointer = ZLM_API.mk_media_source_get_origin_type_str(ctx);
             long aliveSecond = ZLM_API.mk_media_source_get_alive_second(ctx);
             int bytesSpeed = ZLM_API.mk_media_source_get_bytes_speed(ctx);
-            String originUrl = ZLM_API.mk_media_source_get_origin_url(ctx);
+            Pointer originUrlPointer = ZLM_API.mk_media_source_get_origin_url(ctx);
             long createStamp = ZLM_API.mk_media_source_get_create_stamp(ctx);
             int isRecordHls = ZLM_API.mk_media_source_is_recording(ctx, 0);
             int isRecordMp4 = ZLM_API.mk_media_source_is_recording(ctx, 1);
@@ -174,11 +174,11 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setReaderCount(readerCount);
             mediaInfoResult.setTotalReaderCount(totalReaderCount);
             mediaInfoResult.setOriginType(originType);
-            mediaInfoResult.setOriginUrl(originUrl);
+            mediaInfoResult.setOriginUrl(originUrlPointer.getString(0));
             mediaInfoResult.setCreateStamp(createStamp);
             mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
             mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
-            mediaInfoResult.setOriginTypeStr(originTypeStr);
+            mediaInfoResult.setOriginTypeStr(originTypePointer.getString(0));
             mediaInfoResult.setAliveSecond(aliveSecond);
             mediaInfoResult.setBytesSpeed(bytesSpeed);
             List<Track> tracks = new ArrayList<>();
@@ -222,6 +222,8 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_channel(audio_channel);
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
+                ZLM_API.mk_free(originTypePointer);
+                ZLM_API.mk_free(originUrlPointer);
                 tracks.add(track);
                 ZLM_API.mk_track_unref(mkTrack);
             }
@@ -249,10 +251,10 @@ public class ApiServiceImpl implements IApiService {
             int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(mkMediaSource);
             int trackSize = ZLM_API.mk_media_source_get_track_count(mkMediaSource);
             int originType = ZLM_API.mk_media_source_get_origin_type(mkMediaSource);
-            String originTypeStr = ZLM_API.mk_media_source_get_origin_type_str(mkMediaSource);
+            Pointer originTypePointer = ZLM_API.mk_media_source_get_origin_type_str(mkMediaSource);
             long aliveSecond = ZLM_API.mk_media_source_get_alive_second(mkMediaSource);
             int bytesSpeed = ZLM_API.mk_media_source_get_bytes_speed(mkMediaSource);
-            String originUrl = ZLM_API.mk_media_source_get_origin_url(mkMediaSource);
+            Pointer originUrlPointer = ZLM_API.mk_media_source_get_origin_url(mkMediaSource);
             long createStamp = ZLM_API.mk_media_source_get_create_stamp(mkMediaSource);
             int isRecordHls = ZLM_API.mk_media_source_is_recording(mkMediaSource, 0);
             int isRecordMp4 = ZLM_API.mk_media_source_is_recording(mkMediaSource, 1);
@@ -263,11 +265,11 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setReaderCount(readerCount);
             mediaInfoResult.setTotalReaderCount(totalReaderCount);
             mediaInfoResult.setOriginType(originType);
-            mediaInfoResult.setOriginUrl(originUrl);
+            mediaInfoResult.setOriginUrl(originUrlPointer.getString(0));
             mediaInfoResult.setCreateStamp(createStamp);
             mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
             mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
-            mediaInfoResult.setOriginTypeStr(originTypeStr);
+            mediaInfoResult.setOriginTypeStr(originTypePointer.getString(0));
             mediaInfoResult.setAliveSecond(aliveSecond);
             mediaInfoResult.setBytesSpeed(bytesSpeed);
             List<Track> tracks = new ArrayList<>();
@@ -312,6 +314,8 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
                 tracks.add(track);
+                ZLM_API.mk_free(originTypePointer);
+                ZLM_API.mk_free(originUrlPointer);
                 ZLM_API.mk_track_unref(mkTrack);
             }
             mediaInfoResult.setTracks(tracks);
