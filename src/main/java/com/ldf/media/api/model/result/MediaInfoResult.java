@@ -44,10 +44,10 @@ public class MediaInfoResult implements Serializable {
     private String schema;
 
     @ApiModelProperty(value = "存活时间，单位秒")
-    private Integer aliveSecond;
+    private Long aliveSecond;
 
     @ApiModelProperty(value = "数据产生速度，单位byte/s")
-    private Long bytesSpeed;
+    private Integer  bytesSpeed;
 
     @ApiModelProperty(value = "GMT unix系统时间戳，单位秒")
     private Long createStamp;

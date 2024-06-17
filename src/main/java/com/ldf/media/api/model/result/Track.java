@@ -13,13 +13,14 @@ public class Track implements Serializable {
     private String codec_id_name;
     private Integer codec_type;
     private Integer fps;
-    private Integer frames;
+    private Long  frames;
+    private Long duration;
     private Integer bit_rate;
     private Integer gop_interval_ms;
     private Integer gop_size;
     private Integer height;
-    private Integer key_frames;
-    private Integer loss;
+    private Long key_frames;
+    private Float  loss;
     private Boolean ready;
     private Integer width;
     private Integer sample_rate;

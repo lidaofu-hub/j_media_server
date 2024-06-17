@@ -160,8 +160,13 @@ public class ApiServiceImpl implements IApiService {
             int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(ctx);
             int trackSize = ZLM_API.mk_media_source_get_track_count(ctx);
             int originType = ZLM_API.mk_media_source_get_origin_type(ctx);
+            String originTypeStr = ZLM_API.mk_media_source_get_origin_type_str(ctx);
+            long aliveSecond = ZLM_API.mk_media_source_get_alive_second(ctx);
+            int bytesSpeed = ZLM_API.mk_media_source_get_bytes_speed(ctx);
             String originUrl = ZLM_API.mk_media_source_get_origin_url(ctx);
             long createStamp = ZLM_API.mk_media_source_get_create_stamp(ctx);
+            int isRecordHls = ZLM_API.mk_media_source_is_recording(ctx, 0);
+            int isRecordMp4 = ZLM_API.mk_media_source_is_recording(ctx, 1);
             MediaInfoResult mediaInfoResult = new MediaInfoResult();
             mediaInfoResult.setApp(app);
             mediaInfoResult.setStream(stream);
@@ -171,6 +176,11 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setOriginType(originType);
             mediaInfoResult.setOriginUrl(originUrl);
             mediaInfoResult.setCreateStamp(createStamp);
+            mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
+            mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
+            mediaInfoResult.setOriginTypeStr(originTypeStr);
+            mediaInfoResult.setAliveSecond(aliveSecond);
+            mediaInfoResult.setBytesSpeed(bytesSpeed);
             List<Track> tracks = new ArrayList<>();
             for (int i = 0; i < trackSize; i++) {
                 MK_TRACK mkTrack = ZLM_API.mk_media_source_get_track(ctx, i);
@@ -179,10 +189,18 @@ public class ApiServiceImpl implements IApiService {
                 String codec_name = ZLM_API.mk_track_codec_name(mkTrack);
                 int bit_rate = ZLM_API.mk_track_bit_rate(mkTrack);
                 int is_video = ZLM_API.mk_track_is_video(mkTrack);
+                int is_ready = ZLM_API.mk_track_ready(mkTrack);
+                long duration  = ZLM_API.mk_track_duration(mkTrack);
+                long frames = ZLM_API.mk_track_frames(mkTrack);
+                float loss = ZLM_API.mk_media_source_get_track_loss(ctx, mkTrack);
                 track.setCodec_id(codec_id);
                 track.setCodec_id_name(codec_name);
                 track.setBit_rate(bit_rate);
                 track.setIs_video(is_video);
+                track.setDuration(duration);
+                track.setReady(is_ready==1);
+                track.setFrames(frames);
+                track.setLoss(loss);
                 if (is_video == 1) {
                     int width = ZLM_API.mk_track_video_width(mkTrack);
                     track.setWidth(width);
@@ -190,6 +208,12 @@ public class ApiServiceImpl implements IApiService {
                     track.setHeight(height);
                     int fps = ZLM_API.mk_track_video_fps(mkTrack);
                     track.setFps(fps);
+                    int gop_size = ZLM_API.mk_track_video_gop_size(mkTrack);
+                    track.setGop_size(gop_size);
+                    int gop_interval_ms = ZLM_API.mk_track_video_gop_interval_ms(mkTrack);
+                    track.setGop_interval_ms(gop_interval_ms);
+                    long key_frames = ZLM_API.mk_track_video_key_frames(mkTrack);
+                    track.setKey_frames(key_frames);
                 } else {
                     int sample_rate = ZLM_API.mk_track_audio_sample_rate(mkTrack);
                     int audio_channel = ZLM_API.mk_track_audio_channel(mkTrack);
@@ -199,6 +223,7 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
                 tracks.add(track);
+                ZLM_API.mk_track_unref(mkTrack);
             }
             mediaInfoResult.setTracks(tracks);
             list.add(mediaInfoResult);
@@ -224,8 +249,13 @@ public class ApiServiceImpl implements IApiService {
             int totalReaderCount = ZLM_API.mk_media_source_get_total_reader_count(mkMediaSource);
             int trackSize = ZLM_API.mk_media_source_get_track_count(mkMediaSource);
             int originType = ZLM_API.mk_media_source_get_origin_type(mkMediaSource);
+            String originTypeStr = ZLM_API.mk_media_source_get_origin_type_str(mkMediaSource);
+            long aliveSecond = ZLM_API.mk_media_source_get_alive_second(mkMediaSource);
+            int bytesSpeed = ZLM_API.mk_media_source_get_bytes_speed(mkMediaSource);
             String originUrl = ZLM_API.mk_media_source_get_origin_url(mkMediaSource);
             long createStamp = ZLM_API.mk_media_source_get_create_stamp(mkMediaSource);
+            int isRecordHls = ZLM_API.mk_media_source_is_recording(mkMediaSource, 0);
+            int isRecordMp4 = ZLM_API.mk_media_source_is_recording(mkMediaSource, 1);
             MediaInfoResult mediaInfoResult = new MediaInfoResult();
             mediaInfoResult.setApp(app);
             mediaInfoResult.setStream(stream);
@@ -235,6 +265,11 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setOriginType(originType);
             mediaInfoResult.setOriginUrl(originUrl);
             mediaInfoResult.setCreateStamp(createStamp);
+            mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
+            mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
+            mediaInfoResult.setOriginTypeStr(originTypeStr);
+            mediaInfoResult.setAliveSecond(aliveSecond);
+            mediaInfoResult.setBytesSpeed(bytesSpeed);
             List<Track> tracks = new ArrayList<>();
             for (int i = 0; i < trackSize; i++) {
                 MK_TRACK mkTrack = ZLM_API.mk_media_source_get_track(mkMediaSource, i);
@@ -243,10 +278,18 @@ public class ApiServiceImpl implements IApiService {
                 String codec_name = ZLM_API.mk_track_codec_name(mkTrack);
                 int bit_rate = ZLM_API.mk_track_bit_rate(mkTrack);
                 int is_video = ZLM_API.mk_track_is_video(mkTrack);
+                int is_ready = ZLM_API.mk_track_ready(mkTrack);
+                long duration  = ZLM_API.mk_track_duration(mkTrack);
+                long frames = ZLM_API.mk_track_frames(mkTrack);
+                float loss = ZLM_API.mk_media_source_get_track_loss(mkMediaSource, mkTrack);
                 track.setCodec_id(codec_id);
                 track.setCodec_id_name(codec_name);
                 track.setBit_rate(bit_rate);
                 track.setIs_video(is_video);
+                track.setDuration(duration);
+                track.setReady(is_ready==1);
+                track.setFrames(frames);
+                track.setLoss(loss);
                 if (is_video == 1) {
                     int width = ZLM_API.mk_track_video_width(mkTrack);
                     track.setWidth(width);
@@ -254,6 +297,12 @@ public class ApiServiceImpl implements IApiService {
                     track.setHeight(height);
                     int fps = ZLM_API.mk_track_video_fps(mkTrack);
                     track.setFps(fps);
+                    int gop_size = ZLM_API.mk_track_video_gop_size(mkTrack);
+                    track.setGop_size(gop_size);
+                    int gop_interval_ms = ZLM_API.mk_track_video_gop_interval_ms(mkTrack);
+                    track.setGop_interval_ms(gop_interval_ms);
+                    long key_frames = ZLM_API.mk_track_video_key_frames(mkTrack);
+                    track.setKey_frames(key_frames);
                 } else {
                     int sample_rate = ZLM_API.mk_track_audio_sample_rate(mkTrack);
                     int audio_channel = ZLM_API.mk_track_audio_channel(mkTrack);
@@ -263,6 +312,7 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
                 tracks.add(track);
+                ZLM_API.mk_track_unref(mkTrack);
             }
             mediaInfoResult.setTracks(tracks);
             return mediaInfoResult;
