@@ -222,11 +222,11 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_channel(audio_channel);
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
-                ZLM_API.mk_free(originTypePointer);
-                ZLM_API.mk_free(originUrlPointer);
                 tracks.add(track);
                 ZLM_API.mk_track_unref(mkTrack);
             }
+            ZLM_API.mk_free(originTypePointer);
+            ZLM_API.mk_free(originUrlPointer);
             mediaInfoResult.setTracks(tracks);
             list.add(mediaInfoResult);
         }), param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream());
@@ -314,10 +314,10 @@ public class ApiServiceImpl implements IApiService {
                     track.setAudio_sample_bit(audio_sample_bit);
                 }
                 tracks.add(track);
-                ZLM_API.mk_free(originTypePointer);
-                ZLM_API.mk_free(originUrlPointer);
                 ZLM_API.mk_track_unref(mkTrack);
             }
+            ZLM_API.mk_free(originTypePointer);
+            ZLM_API.mk_free(originUrlPointer);
             mediaInfoResult.setTracks(tracks);
             return mediaInfoResult;
         }
