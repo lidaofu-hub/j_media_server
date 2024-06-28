@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,11 +83,15 @@ public class ApiServiceImpl implements IApiService {
         //ZLM_API.mk_ini_set_option(option,"hls_save_path","D:/record");
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
         ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
+
         //创建拉流代理
         MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create4(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option, param.getRetryCount());
         //设置超时时间
         if (param.getTimeoutSec() != null) {
             ZLM_API.mk_proxy_player_set_option(mk_proxy, "protocol_timeout_ms", String.valueOf(param.getTimeoutSec() * 1000));
+        }
+        if (param.getRtspSpeed()!=null) {
+            ZLM_API.mk_proxy_player_set_option(mk_proxy, "rtsp_speed", param.getRtspSpeed().setScale(2, RoundingMode.HALF_UP).toString());
         }
         //设置拉流方式
         if (param.getRtpType() != null) {

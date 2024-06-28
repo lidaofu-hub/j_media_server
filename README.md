@@ -2,7 +2,7 @@
 
 开源流媒体服务器ZLMediaKit 的Java Api实现的Java版ZLMediaKit流媒体服务器
 
-本项目可以作为[j_zlm_sdk](https://github.com/lidaofu-hub/j_zlm_sdk)使用示例代码。不重复造流媒体服务器轮子，只做代码集成示例。
+本项目可以作为[ZLM4J](https://gitee.com/aizuda/zlm4j)使用示例代码。不重复造流媒体服务器轮子，只做代码集成示例。
 
 本项目接口风格兼容ZLMediaKit REST API
 
