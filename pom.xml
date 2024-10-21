@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.aizuda</groupId>
             <artifactId>zlm4j</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.9</version>
         </dependency>
     </dependencies>
     <!--腾讯云mvn-->
@@ -85,7 +85,7 @@
         <repository>
             <id>nexus-tencentyun</id>
             <name>Nexus tencentyun</name>
-            <url>http://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
+            <url>https://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
         </repository>
     </repositories>
 

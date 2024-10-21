@@ -20,12 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -90,7 +92,7 @@ public class ApiServiceImpl implements IApiService {
         if (param.getTimeoutSec() != null) {
             ZLM_API.mk_proxy_player_set_option(mk_proxy, "protocol_timeout_ms", String.valueOf(param.getTimeoutSec() * 1000));
         }
-        if (param.getRtspSpeed()!=null) {
+        if (param.getRtspSpeed() != null) {
             ZLM_API.mk_proxy_player_set_option(mk_proxy, "rtsp_speed", param.getRtspSpeed().setScale(2, RoundingMode.HALF_UP).toString());
         }
         //设置拉流方式
@@ -182,8 +184,8 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setOriginType(originType);
             mediaInfoResult.setOriginUrl(originUrlPointer.getString(0));
             mediaInfoResult.setCreateStamp(createStamp);
-            mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
-            mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
+            mediaInfoResult.setIsRecordingHLS(isRecordHls == 1);
+            mediaInfoResult.setIsRecordingMP4(isRecordMp4 == 1);
             mediaInfoResult.setOriginTypeStr(originTypePointer.getString(0));
             mediaInfoResult.setAliveSecond(aliveSecond);
             mediaInfoResult.setBytesSpeed(bytesSpeed);
@@ -196,7 +198,7 @@ public class ApiServiceImpl implements IApiService {
                 int bit_rate = ZLM_API.mk_track_bit_rate(mkTrack);
                 int is_video = ZLM_API.mk_track_is_video(mkTrack);
                 int is_ready = ZLM_API.mk_track_ready(mkTrack);
-                long duration  = ZLM_API.mk_track_duration(mkTrack);
+                long duration = ZLM_API.mk_track_duration(mkTrack);
                 long frames = ZLM_API.mk_track_frames(mkTrack);
                 float loss = ZLM_API.mk_media_source_get_track_loss(ctx, mkTrack);
                 track.setCodec_id(codec_id);
@@ -204,7 +206,7 @@ public class ApiServiceImpl implements IApiService {
                 track.setBit_rate(bit_rate);
                 track.setIs_video(is_video);
                 track.setDuration(duration);
-                track.setReady(is_ready==1);
+                track.setReady(is_ready == 1);
                 track.setFrames(frames);
                 track.setLoss(loss);
                 if (is_video == 1) {
@@ -273,8 +275,8 @@ public class ApiServiceImpl implements IApiService {
             mediaInfoResult.setOriginType(originType);
             mediaInfoResult.setOriginUrl(originUrlPointer.getString(0));
             mediaInfoResult.setCreateStamp(createStamp);
-            mediaInfoResult.setIsRecordingHLS(isRecordHls==1);
-            mediaInfoResult.setIsRecordingMP4(isRecordMp4==1);
+            mediaInfoResult.setIsRecordingHLS(isRecordHls == 1);
+            mediaInfoResult.setIsRecordingMP4(isRecordMp4 == 1);
             mediaInfoResult.setOriginTypeStr(originTypePointer.getString(0));
             mediaInfoResult.setAliveSecond(aliveSecond);
             mediaInfoResult.setBytesSpeed(bytesSpeed);
@@ -287,7 +289,7 @@ public class ApiServiceImpl implements IApiService {
                 int bit_rate = ZLM_API.mk_track_bit_rate(mkTrack);
                 int is_video = ZLM_API.mk_track_is_video(mkTrack);
                 int is_ready = ZLM_API.mk_track_ready(mkTrack);
-                long duration  = ZLM_API.mk_track_duration(mkTrack);
+                long duration = ZLM_API.mk_track_duration(mkTrack);
                 long frames = ZLM_API.mk_track_frames(mkTrack);
                 float loss = ZLM_API.mk_media_source_get_track_loss(mkMediaSource, mkTrack);
                 track.setCodec_id(codec_id);
@@ -295,7 +297,7 @@ public class ApiServiceImpl implements IApiService {
                 track.setBit_rate(bit_rate);
                 track.setIs_video(is_video);
                 track.setDuration(duration);
-                track.setReady(is_ready==1);
+                track.setReady(is_ready == 1);
                 track.setFrames(frames);
                 track.setLoss(loss);
                 if (is_video == 1) {
@@ -352,6 +354,7 @@ public class ApiServiceImpl implements IApiService {
     @Override
     public Statistic getStatistic() {
         Statistic statistic = new Statistic();
+        BlockingQueue<Boolean> queue = new ArrayBlockingQueue<>(1);
         IMKGetStatisticCallBack imkGetStatisticCallBack = new IMKGetStatisticCallBack() {
             @Override
             public void invoke(Pointer user_data, MK_INI ini) {
@@ -387,10 +390,17 @@ public class ApiServiceImpl implements IApiService {
                 statistic.setBufferList(Long.valueOf(bufferList));
                 statistic.setRtpPacket(Long.valueOf(rtpPacket));
                 statistic.setRtmpPacket(Long.valueOf(rtmpPacket));
-                ZLM_API.mk_ini_release(ini);
+                queue.offer(true);
             }
         };
-        ZLM_API.mk_get_statistic(imkGetStatisticCallBack, null, null);
+        ZLM_API.mk_get_statistic(imkGetStatisticCallBack, null, user_data -> {
+
+        });
+        try {
+            queue.poll(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return statistic;
     }
 
