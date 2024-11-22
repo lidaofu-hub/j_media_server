@@ -1,6 +1,6 @@
 server:
   port: 8899
-media:
+media: ##目前只增加部分重要配置，更多配置请自行配置
   thread_num: 8
   rtmp_port: 7935
   rtsp_port: 7554
@@ -10,14 +10,14 @@ media:
   auto_close: 0
   streamNoneReaderDelayMS: 30000
   maxStreamWaitMS: 1500
-  enable_ts: 0
+  enable_ts: 1
   enable_hls: 1
   enable_fmp4: 0
   enable_rtsp: 1
   enable_rtmp: 1
   enable_mp4: 0
-  enable_hls_fmp4: 0
-  enable_audio: 0
+  enable_hls_fmp4: 1
+  enable_audio: 1
   mp4_as_player: 1
   mp4_max_second: 3600
   mp4_save_path: E:/media
