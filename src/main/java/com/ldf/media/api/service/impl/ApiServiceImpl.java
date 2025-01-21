@@ -134,6 +134,7 @@ public class ApiServiceImpl implements IApiService {
         MK_PROXY_PLAYER mkProxyPlayer = PROXY_PLAYER_MAP.get(key);
         if (mkProxyPlayer != null) {
             ZLM_API.mk_proxy_player_release(mkProxyPlayer);
+            PROXY_PLAYER_MAP.remove(key);
             return true;
         }
         return false;
