@@ -88,6 +88,7 @@ public class MediaServerContext {
         ZLM_API.mk_ini_set_option_int(MK_INI, "hls.broadcastRecordTs", config.getBroadcastRecordTs());
         ZLM_API.mk_ini_set_option_int(MK_INI, "hls.segNum", config.getSegNum());
         ZLM_API.mk_ini_set_option_int(MK_INI, "hls.segDur", config.getSegDur());
+        ZLM_API.mk_ini_set_option(MK_INI, "rtc.externIP", config.getRtc_host());
         //初始化zmk服务器
         ZLM_API.mk_env_init1(config.getThread_num(), config.getLog_level(), config.getLog_mask(), config.getLog_path(), config.getLog_file_days(), 0, null, 0, null, null);
     }
