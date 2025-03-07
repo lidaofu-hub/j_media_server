@@ -23,6 +23,8 @@
     - 开启rtp服务：/index/api/openRtpServer
     - 关闭rtp服务：/index/api/closeRtpServer
     - 获取rtp服务列表：/index/api/listRtpServer
+    - 截图：/index/api/getSnap
+    - 转码（beta） ：/index/api/transcode
     - 开发中：😁
 - **回调实现**：
     - MKHttpAccessCallBack：http鉴权回调

@@ -6,6 +6,8 @@ import com.ldf.media.api.model.result.Result;
 import com.ldf.media.api.model.result.RtpServerResult;
 import com.ldf.media.api.model.result.Statistic;
 import com.ldf.media.api.service.IApiService;
+import com.ldf.media.api.service.ISnapService;
+import com.ldf.media.api.service.ITranscodeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiController {
     private final IApiService iApiService;
+    private final ISnapService iSnapService;
+    private final ITranscodeService iTranscodeService;
 
     @ApiOperation(value = "【拉流代理】添加rtmp/rtsp拉流代理", notes = "此接口不会返回具体流地址，请按照流地址生成规则结合自己网络信息来拼接具体地址")
     @RequestMapping(value = "/addStreamProxy", method = {RequestMethod.POST, RequestMethod.GET})
@@ -160,5 +165,22 @@ public class ApiController {
     public Result<List<RtpServerResult>> listRtpServer() {
         List<RtpServerResult> results = iApiService.listRtpServer();
         return new Result<>(results);
+    }
+
+    @ApiOperation(value = "【截图】获取截图")
+    @ApiImplicitParam(name = "url", value = "截图流地址", required = true)
+    @RequestMapping(value = "/getSnap", method = {RequestMethod.POST, RequestMethod.GET})
+    public void getSnap(String url, HttpServletResponse response) {
+        iSnapService.getSnap(url, response);
+
+    }
+
+    @ApiOperation(value = "【转码】拉流代理转码(beta)", notes = "默认H265转H264 支持分辨率调整 暂时只支持视频转码，音频因为各种封装格式对编码格式、音频参数等转换规则复杂暂时不支持")
+    @RequestMapping(value = "/transcode", method = {RequestMethod.POST, RequestMethod.GET})
+    public Result<String> transcode(@Validated TranscodeParam param) {
+        new Thread(() -> {
+            iTranscodeService.transcode(param);
+        }).start();
+        return new Result<>();
     }
 }
