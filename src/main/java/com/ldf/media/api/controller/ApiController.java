@@ -54,6 +54,22 @@ public class ApiController {
         return new Result<>(flag);
     }
 
+    @ApiOperation(value = "【推流代理】添加rtmp/rtsp推流代理")
+    @RequestMapping(value = "/addStreamPusherProxy", method = {RequestMethod.POST, RequestMethod.GET})
+    public Result<String> addStreamPusherProxy(@Validated StreamPushProxyParam param) {
+        String error = iApiService.addStreamPusherProxy(param);
+        return new Result<>(error);
+    }
+
+
+    @ApiOperation(value = "【推流代理】删除rtmp/rtsp推流代理")
+    @RequestMapping(value = "/delStreamPusherProxy", method = {RequestMethod.POST, RequestMethod.GET})
+    public Result<Boolean> delStreamPusherProxy(String key) {
+        Boolean flag = iApiService.delStreamPusherProxy(key);
+        return new Result<>(flag);
+    }
+
+
 
     @ApiOperation(value = "【流操作】关闭流")
     @RequestMapping(value = "/close_stream", method = {RequestMethod.POST, RequestMethod.GET})

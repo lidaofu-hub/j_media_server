@@ -4,6 +4,7 @@ import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.RandomUtil;
 import com.aizuda.zlm4j.callback.IMKGetStatisticCallBack;
 import com.aizuda.zlm4j.callback.IMKProxyPlayerCallBack;
+import com.aizuda.zlm4j.callback.IMKPushEventCallBack;
 import com.aizuda.zlm4j.callback.IMKRtpServerDetachCallBack;
 import com.aizuda.zlm4j.structure.*;
 import com.ldf.media.api.model.param.*;
@@ -51,9 +52,20 @@ public class ApiServiceImpl implements IApiService {
     private static final Map<String, MK_PROXY_PLAYER> PROXY_PLAYER_MAP = new HashMap<>();
 
     /**
+     * 推流代理列表
+     */
+    private static final Map<String, MK_PUSHER> PUSH_PROXY_PLAYER_MAP = new HashMap<>();
+
+
+    /**
      * 拉流代理关闭回调
      */
     private static final Map<String, IMKProxyPlayerCallBack> PROXY_PLAYER_CLOSE_MAP = new HashMap<>();
+
+    /**
+     * 推流代理关闭回调
+     */
+    private static final Map<String, IMKPushEventCallBack> PUSH_PROXY_PLAYER_CLOSE_MAP = new HashMap<>();
 
     /**
      * rtp服务列表
@@ -68,6 +80,7 @@ public class ApiServiceImpl implements IApiService {
 
     @Override
     public String addStreamProxy(StreamProxyParam param) {
+        String key = RandomUtil.randomString(10);
         //查询流是是否存在
         MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
         Assert.isNull(mkMediaSource, "当前流信息已被使用");
@@ -101,24 +114,26 @@ public class ApiServiceImpl implements IApiService {
         }
         //删除配置
         ZLM_API.mk_ini_release(option);
-        String key = RandomUtil.randomString(10);
+        ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
         //第一次代理结果获取
-        IMKProxyPlayerCallBack imkProxyPlayerCallBack = new IMKProxyPlayerCallBack() {
-            @Override
-            public void invoke(Pointer pUser, int err, String what, int sys_err) {
-                if (err != 0) {
-                    log.warn("【MediaServer】拉流代理失败：{}", what);
-                }
+        IMKProxyPlayerCallBack imkProxyPlayerCallBack = (pUser, err, what, sys_err) -> {
+            if (err != 0) {
+                log.warn("【MediaServer】拉流代理失败：{}", what);
+                queue.offer(what);
+                ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
+            } else {
+                queue.offer(key);
+                log.info("【MediaServer】拉流代理成功");
             }
         };
         ZLM_API.mk_proxy_player_set_on_play_result(mk_proxy, imkProxyPlayerCallBack, mk_proxy.getPointer(), null);
         //回调关闭事件
         IMKProxyPlayerCallBack imkProxyPlayCloseCallBack = (pUser, err, what, sys_err) -> {
             //这里Pointer是ZLM维护的不需要我们释放 遵循谁申请谁释放原则
-            ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
             PROXY_PLAYER_CLOSE_MAP.remove(key);
             PROXY_PLAYER_MAP.remove(key);
             log.info("【MediaServer】拉流代理关闭");
+            ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
         };
         PROXY_PLAYER_CLOSE_MAP.put(key, imkProxyPlayCloseCallBack);
         PROXY_PLAYER_MAP.put(key, mk_proxy);
@@ -126,6 +141,11 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_proxy_player_play(mk_proxy, param.getUrl());
         //添加代理关闭回调 并把代理客户端传过去释放
         ZLM_API.mk_proxy_player_set_on_close(mk_proxy, imkProxyPlayCloseCallBack, mk_proxy.getPointer());
+        try {
+            String error = queue.poll(5, TimeUnit.SECONDS);
+            return error;
+        } catch (InterruptedException e) {
+        }
         return key;
     }
 
@@ -135,6 +155,66 @@ public class ApiServiceImpl implements IApiService {
         if (mkProxyPlayer != null) {
             ZLM_API.mk_proxy_player_release(mkProxyPlayer);
             PROXY_PLAYER_MAP.remove(key);
+            PROXY_PLAYER_CLOSE_MAP.remove(key);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public String addStreamPusherProxy(StreamPushProxyParam param) {
+        String key = RandomUtil.randomString(10);
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getSchema(), MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
+        if (mkMediaSource == null) {
+            return "转推流不存在";
+        }
+        MK_PUSHER mkPusher = ZLM_API.mk_pusher_create_src(mkMediaSource);
+        if (param.getUrl().startsWith("rtsp")) {
+            ZLM_API.mk_pusher_set_option(mkPusher, "rtp_type", param.getRtpType().toString());
+        }
+        if (param.getTimeoutSec() != null) {
+            ZLM_API.mk_pusher_set_option(mkPusher, "protocol_timeout_ms", String.valueOf(param.getTimeoutSec() * 1000));
+        }
+        PUSH_PROXY_PLAYER_MAP.put(key, mkPusher);
+        ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
+        //推流结果回调
+        ZLM_API.mk_pusher_set_on_result(mkPusher, (user_data, err_code, err_msg) -> {
+            if (err_code != 0) {
+                queue.offer(err_msg);
+                log.warn("【MediaServer】推流代理失败：{}", err_msg);
+                ZLM_API.mk_pusher_release(new MK_PUSHER(user_data));
+            } else {
+                queue.offer(key);
+                log.info("【MediaServer】推流代理成功");
+            }
+        }, mkPusher.getPointer());
+        IMKPushEventCallBack imkPushEventCallBack = (user_data, err_code, err_msg) -> {
+            //释放推流器
+            ZLM_API.mk_pusher_release(mkPusher);
+            PUSH_PROXY_PLAYER_MAP.remove(key);
+            PUSH_PROXY_PLAYER_CLOSE_MAP.remove(key);
+            log.info("【MediaServer】推流代理关闭");
+        };
+        PUSH_PROXY_PLAYER_CLOSE_MAP.put(key, imkPushEventCallBack);
+        //推流关闭回调
+        ZLM_API.mk_pusher_set_on_shutdown(mkPusher, imkPushEventCallBack, mkPusher.getPointer());
+        //转推流地址 可以是rtmp或者rtsp
+        ZLM_API.mk_pusher_publish(mkPusher, param.getUrl());
+        try {
+            String error = queue.poll(5, TimeUnit.SECONDS);
+            return error;
+        } catch (InterruptedException e) {
+        }
+        return key;
+    }
+
+    @Override
+    public Boolean delStreamPusherProxy(String key) {
+        MK_PUSHER mkPusher = PUSH_PROXY_PLAYER_MAP.get(key);
+        if (mkPusher != null) {
+            ZLM_API.mk_pusher_release(mkPusher);
+            PUSH_PROXY_PLAYER_MAP.remove(key);
+            PUSH_PROXY_PLAYER_CLOSE_MAP.remove(key);
             return true;
         }
         return false;

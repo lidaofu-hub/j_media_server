@@ -20,6 +20,10 @@ public interface IApiService {
 
     Boolean delStreamProxy(String key);
 
+    String addStreamPusherProxy(StreamPushProxyParam param);
+
+    Boolean delStreamPusherProxy(String key);
+
     Integer closeStream(CloseStreamParam param);
 
     Integer closeStreams(CloseStreamsParam param);
@@ -50,5 +54,4 @@ public interface IApiService {
     Integer closeRtpServer(String stream);
 
     List<RtpServerResult> listRtpServer();
-
 }

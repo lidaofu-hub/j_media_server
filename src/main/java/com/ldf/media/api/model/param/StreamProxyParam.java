@@ -38,7 +38,7 @@ public class StreamProxyParam {
     @ApiModelProperty(value = "拉流重试次数,不传此参数或传值<=0时，则无限重试")
     private Integer retryCount=3;
 
-    @ApiModelProperty(value = "拉流超时时间，单位秒，float类型")
+    @ApiModelProperty(value = "拉流超时时间，单位秒型")
     private Integer timeoutSec;
 
     @ApiModelProperty(value = "开启hls转码")
