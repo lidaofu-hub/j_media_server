@@ -59,7 +59,6 @@
 1. 本项目基于Spring Boot 2.7.12版本，使用undertow作为web容器，使用knife4j作为接口文档,
 2. 本项目基于最新ZLM4J开发完成
 
-## 😁常见问题
 
 ## 😁拼接屏使用说明
 ###  参数说明
@@ -106,6 +105,7 @@
 }
   ```
 
+## 😁常见问题
 
 1. 参见[ZLM4J常见问题 ](https://ux5phie02ut.feishu.cn/wiki/SzIAwyxnpilVMlkccS4cfJFGn1g)
 
