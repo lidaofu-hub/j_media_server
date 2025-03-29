@@ -8,15 +8,13 @@ import com.ldf.media.api.model.result.Statistic;
 import com.ldf.media.api.service.IApiService;
 import com.ldf.media.api.service.ISnapService;
 import com.ldf.media.api.service.ITranscodeService;
+import com.ldf.media.api.service.IVideoStackService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,6 +37,7 @@ public class ApiController {
     private final IApiService iApiService;
     private final ISnapService iSnapService;
     private final ITranscodeService iTranscodeService;
+    private final IVideoStackService iVideoStackService;
 
     @ApiOperation(value = "【拉流代理】添加rtmp/rtsp拉流代理", notes = "此接口不会返回具体流地址，请按照流地址生成规则结合自己网络信息来拼接具体地址")
     @RequestMapping(value = "/addStreamProxy", method = {RequestMethod.POST, RequestMethod.GET})
@@ -68,7 +67,6 @@ public class ApiController {
         Boolean flag = iApiService.delStreamPusherProxy(key);
         return new Result<>(flag);
     }
-
 
 
     @ApiOperation(value = "【流操作】关闭流")
@@ -198,5 +196,27 @@ public class ApiController {
             iTranscodeService.transcode(param);
         }).start();
         return new Result<>();
+    }
+
+    @ApiOperation(value = "【拼接屏】开启拼接屏(beta)")
+    @RequestMapping(value = "/stack/start", method = {RequestMethod.POST})
+    public Result<String> startStack(@RequestBody @Validated VideoStackParam param) {
+        String info = iVideoStackService.startStack(param);
+        return new Result<>(info);
+    }
+
+    @ApiOperation(value = "【拼接屏】重新设置拼接屏(beta)")
+    @RequestMapping(value = "/stack/reset", method = {RequestMethod.POST})
+    public Result<String> resetStack(@RequestBody @Validated VideoStackParam param) {
+        String info = iVideoStackService.resetStack(param);
+        return new Result<>(info);
+    }
+
+    @ApiOperation(value = "【拼接屏】关闭拼接屏(beta)")
+    @ApiImplicitParam(name = "id", value = "拼接屏任务id", required = true)
+    @RequestMapping(value = "/stack/stop", method = {RequestMethod.POST})
+    public Result<String> stopStack(String id) {
+        String info = iVideoStackService.stopStack(id);
+        return new Result<>(info);
     }
 }

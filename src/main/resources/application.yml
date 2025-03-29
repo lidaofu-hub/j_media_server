@@ -20,9 +20,9 @@ media: ##目前只增加部分重要配置，更多配置请自行配置
   enable_audio: 1
   mp4_as_player: 1
   mp4_max_second: 3600
-  mp4_save_path: E:/media
-  hls_save_path: E:/media
-  rootPath: E:/media
+  mp4_save_path: D:/media
+  hls_save_path: D:/media
+  rootPath: D:/media
   hls_demand: 0
   broadcastRecordTs: 1
   segDur: 3
