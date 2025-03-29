@@ -19,7 +19,7 @@ public class MediaServerThreadPool {
      * MediaServer模块线程池
      */
     private final static ThreadPoolExecutor SYSTEM_THREAD_POOL = new ThreadPoolExecutor(
-            8, 16, 60, TimeUnit.SECONDS
+            32, 64, 60, TimeUnit.SECONDS
             , new LinkedBlockingDeque<>(256), new ThreadFactory() {
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 

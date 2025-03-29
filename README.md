@@ -90,6 +90,7 @@
   "gridLineEnable": true, //是否开启分割线
   "gridLineColor": "000000", //分割线颜色  RGB hex字符串 
   "gridLineWidth": 1, //分割线宽度
+  "deCodecName": "h264_qsv",
   "windowList": [  //块配置数组，可为空
     {
       "imageUrl": "", //块内填充的图片地址  需要图片像素格式为BGR格式的png或者jpg如果不是则默认填充颜色

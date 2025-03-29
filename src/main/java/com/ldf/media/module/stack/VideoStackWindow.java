@@ -16,6 +16,8 @@ import org.bytedeco.ffmpeg.global.swscale;
 import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.ldf.media.module.stack.VideoStack.getImageBGRData;
 import static org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF;
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
@@ -56,8 +58,12 @@ public class VideoStackWindow {
 
     private Boolean isStop = false;
 
+    private AtomicBoolean readDataAtomic;
 
-    public VideoStackWindow(String url, Boolean isVideo, Integer width, Integer height, Integer yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
+    private String deCodecName;
+
+
+    public VideoStackWindow(String url, Boolean isVideo, Integer width, Integer height, Integer yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer, AtomicBoolean readDataAtomic, String deCodecName) {
         this.url = url;
         this.isVideo = isVideo;
         this.width = width;
@@ -65,6 +71,8 @@ public class VideoStackWindow {
         this.yPos = yPos;
         this.dataPointer = dataPointer;
         this.linePointer = linePointer;
+        this.readDataAtomic = readDataAtomic;
+        this.deCodecName = deCodecName;
     }
 
 
@@ -114,7 +122,16 @@ public class VideoStackWindow {
             return;
         }
         avStream = iFmtCtx.streams(vIndex);
-        AVCodec deCodec = avcodec.avcodec_find_decoder(avStream.codecpar().codec_id());
+        AVCodec deCodec = null;
+        if (StrUtil.isNotBlank(deCodecName)) {
+            deCodec = avcodec.avcodec_find_decoder_by_name(deCodecName);
+            if (deCodec != null && deCodec.id() != avStream.codecpar().codec_id()) {
+                deCodec = null;
+            }
+        }
+        if (deCodec == null) {
+            deCodec = avcodec.avcodec_find_decoder(avStream.codecpar().codec_id());
+        }
         deCodecCtx = avcodec.avcodec_alloc_context3(deCodec);
         if (deCodecCtx == null) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "avcodec_alloc_context3 error \n");
@@ -179,6 +196,9 @@ public class VideoStackWindow {
                     int destPos = yPos;
                     int diffW = linePointer.get(0);
                     int destW = rgbFrame.linesize().get(0);
+                    while (!readDataAtomic.get()) {
+                        Thread.yield();
+                    }
                     for (int i = 0; i < rgbFrame.height(); i++) {
                         Pointer.memcpy(dataPointer.get(0).getPointer(destPos), rgbFrame.data().get(0).getPointer(yRgbPos), rgbFrame.width() * 3L);
                         yRgbPos = yRgbPos + destW;
