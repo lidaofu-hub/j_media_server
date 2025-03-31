@@ -2,11 +2,13 @@ package com.ldf.media.module.stack;
 
 import cn.hutool.core.util.StrUtil;
 import com.ldf.media.pool.MediaServerThreadPool;
+import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.ffmpeg.avformat.AVFormatContext;
 import org.bytedeco.ffmpeg.avformat.AVStream;
+import org.bytedeco.ffmpeg.avutil.AVBufferRef;
 import org.bytedeco.ffmpeg.avutil.AVDictionary;
 import org.bytedeco.ffmpeg.avutil.AVFrame;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -16,13 +18,10 @@ import org.bytedeco.ffmpeg.global.swscale;
 import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static com.ldf.media.module.stack.VideoStack.getImageBGRData;
-import static org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF;
-import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
+import static org.bytedeco.ffmpeg.global.avutil.*;
 import static org.bytedeco.ffmpeg.presets.avutil.AVERROR_EAGAIN;
-
+@Slf4j
 public class VideoStackWindow {
     private String url;
 
@@ -42,9 +41,13 @@ public class VideoStackWindow {
 
     private AVFormatContext iFmtCtx = null;
 
+    private AVBufferRef hwDeviceCtx = null;
+
     private AVStream avStream = null;
 
     private AVFrame avFrame = null;
+
+    private AVFrame localFrame = null;
 
     private AVFrame rgbFrame = null;
 
@@ -58,12 +61,8 @@ public class VideoStackWindow {
 
     private Boolean isStop = false;
 
-    private AtomicBoolean readDataAtomic;
 
-    private String deCodecName;
-
-
-    public VideoStackWindow(String url, Boolean isVideo, Integer width, Integer height, Integer yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer, AtomicBoolean readDataAtomic, String deCodecName) {
+    public VideoStackWindow(String url, Boolean isVideo, Integer width, Integer height, Integer yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
         this.url = url;
         this.isVideo = isVideo;
         this.width = width;
@@ -71,8 +70,6 @@ public class VideoStackWindow {
         this.yPos = yPos;
         this.dataPointer = dataPointer;
         this.linePointer = linePointer;
-        this.readDataAtomic = readDataAtomic;
-        this.deCodecName = deCodecName;
     }
 
 
@@ -94,6 +91,7 @@ public class VideoStackWindow {
      */
     private void initVideo() {
         int ret = 0;
+        System.out.println(avutil.avutil_configuration());
         iFmtCtx = new AVFormatContext(null);
         boolean isRtsp = url.startsWith("rtsp");
         if (isRtsp) {
@@ -123,15 +121,7 @@ public class VideoStackWindow {
         }
         avStream = iFmtCtx.streams(vIndex);
         AVCodec deCodec = null;
-        if (StrUtil.isNotBlank(deCodecName)) {
-            deCodec = avcodec.avcodec_find_decoder_by_name(deCodecName);
-            if (deCodec != null && deCodec.id() != avStream.codecpar().codec_id()) {
-                deCodec = null;
-            }
-        }
-        if (deCodec == null) {
-            deCodec = avcodec.avcodec_find_decoder(avStream.codecpar().codec_id());
-        }
+        deCodec = avcodec.avcodec_find_decoder(avStream.codecpar().codec_id());
         deCodecCtx = avcodec.avcodec_alloc_context3(deCodec);
         if (deCodecCtx == null) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "avcodec_alloc_context3 error \n");
@@ -144,6 +134,9 @@ public class VideoStackWindow {
             free();
             return;
         }
+        if (hwDeviceCtx != null) {
+            deCodecCtx.hw_device_ctx(avutil.av_buffer_ref(hwDeviceCtx));
+        }
         ret = avcodec.avcodec_open2(deCodecCtx, deCodec, (PointerPointer) null);
         if (ret < 0) {
             avutil.av_log(deCodecCtx, AV_LOG_ERROR, "avcodec_open2 error \n");
@@ -152,9 +145,13 @@ public class VideoStackWindow {
         }
         avPacket = avcodec.av_packet_alloc();
         avFrame = avutil.av_frame_alloc();
-        avFrame.width(deCodecCtx.width());
-        avFrame.height(deCodecCtx.height());
-        avFrame.format(deCodecCtx.pix_fmt());
+        if (hwDeviceCtx == null) {
+            avFrame.width(deCodecCtx.width());
+            avFrame.height(deCodecCtx.height());
+            avFrame.format(deCodecCtx.pix_fmt());
+        } else {
+            localFrame = avutil.av_frame_alloc();
+        }
         avutil.av_frame_get_buffer(avFrame, 1);
         rgbFrame = avutil.av_frame_alloc();
         rgbFrame.width(width);
@@ -196,14 +193,12 @@ public class VideoStackWindow {
                     int destPos = yPos;
                     int diffW = linePointer.get(0);
                     int destW = rgbFrame.linesize().get(0);
-                    while (!readDataAtomic.get()) {
-                        Thread.yield();
-                    }
                     for (int i = 0; i < rgbFrame.height(); i++) {
                         Pointer.memcpy(dataPointer.get(0).getPointer(destPos), rgbFrame.data().get(0).getPointer(yRgbPos), rgbFrame.width() * 3L);
                         yRgbPos = yRgbPos + destW;
                         destPos = destPos + diffW;
                     }
+                    avutil.av_frame_unref(avFrame);
                 }
             }
             avcodec.av_packet_unref(avPacket);
@@ -259,6 +254,7 @@ public class VideoStackWindow {
      * 释放资源
      */
     private void free() {
+        log.info("【拼接屏窗口】释放流地址：{} 资源",url);
         if (iFmtCtx != null) {
             avformat.avformat_close_input(iFmtCtx);
             iFmtCtx = null;
@@ -270,6 +266,13 @@ public class VideoStackWindow {
         if (avFrame != null) {
             avutil.av_frame_free(avFrame);
             avFrame = null;
+        }
+        if (localFrame != null) {
+            avutil.av_frame_free(localFrame);
+            localFrame = null;
+        }
+        if (hwDeviceCtx != null) {
+            avutil.av_buffer_unref(hwDeviceCtx);
         }
         if (rgbFrame != null) {
             avutil.av_frame_free(rgbFrame);

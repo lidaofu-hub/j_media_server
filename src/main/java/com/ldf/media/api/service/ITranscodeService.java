@@ -10,4 +10,10 @@ public interface ITranscodeService {
      * @return
      */
     void transcode(TranscodeParam param);
+
+    /**
+     * 停止转码
+     * @param stream
+     */
+    void stopTranscode(String stream);
 }

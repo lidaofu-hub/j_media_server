@@ -75,21 +75,21 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "avformat_open_input error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
-        ret=avformat.avformat_find_stream_info(iFmtCtx,(PointerPointer) null);
+        ret = avformat.avformat_find_stream_info(iFmtCtx, (PointerPointer) null);
         if (ret < 0) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "avformat_find_stream_info error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         videoIndex = avformat.av_find_best_stream(iFmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, (PointerPointer) null, 0);
         if (videoIndex < 0) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "av_find_best_stream error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         vStream = iFmtCtx.streams(videoIndex);
@@ -105,7 +105,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "av_read_frame error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         AVCodec deCodec = avcodec.avcodec_find_decoder(vStream.codecpar().codec_id());
@@ -116,14 +116,14 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(deCodecCtx, AV_LOG_ERROR, "avcodec_parameters_to_context error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         ret = avcodec.avcodec_open2(deCodecCtx, deCodec, (PointerPointer) null);
         if (ret < 0) {
             avutil.av_log(deCodecCtx, AV_LOG_ERROR, "avcodec_open2 error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         oFmtCtx = new AVFormatContext(null);
@@ -141,7 +141,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(enCodecCtx, AV_LOG_ERROR, "avcodec_open2 error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         frame = avutil.av_frame_alloc();
@@ -152,7 +152,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(enCodecCtx, AV_LOG_ERROR, "av_frame_get_buffer error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         if (avutil.av_frame_is_writable(frame) != 1) {
@@ -166,7 +166,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0 && ret != AVERROR_EOF() && ret != AVERROR_EAGAIN()) {
             avutil.av_log(deCodecCtx, AV_LOG_ERROR, "avcodec_receive_frame error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         avcodec.avcodec_send_frame(enCodecCtx, frame);
@@ -175,7 +175,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0 && ret != AVERROR_EOF() && ret != AVERROR_EAGAIN()) {
             avutil.av_log(enCodecCtx, AV_LOG_ERROR, "avcodec_receive_packet error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         AVIOContext pb = new AVIOContext((Pointer) null);
@@ -183,7 +183,7 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avio_open error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         oFmtCtx.pb(pb);
@@ -191,25 +191,26 @@ public class SnapServiceImpl implements ISnapService {
         if (ret < 0) {
             avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avformat_write_header error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         ret = avformat.av_write_frame(oFmtCtx, packet);
         if (ret < 0) {
             avutil.av_log(oFmtCtx, AV_LOG_ERROR, "av_write_frame error \n");
             writeError(response);
-            free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+            free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
             return;
         }
         avcodec.av_packet_unref(packet);
         avcodec.av_packet_unref(srcPacket);
         avformat.av_write_trailer(oFmtCtx);
         writeImg(imgPath, response);
-        free(deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+        free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
     }
 
     /**
      * 写图片
+     *
      * @param imgPath
      * @param response
      */
@@ -222,7 +223,7 @@ public class SnapServiceImpl implements ISnapService {
         try (InputStream ins = new FileInputStream(file)) {
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setHeader("Access-Control-Allow-Methods", "OPTIONS,GET, POST, PUT, DELETE");
-            response.setHeader("Content-Disposition", "inline;filename=" + imgPath.substring(imgPath.lastIndexOf("/")+1, imgPath.length()));
+            response.setHeader("Content-Disposition", "inline;filename=" + imgPath.substring(imgPath.lastIndexOf("/") + 1, imgPath.length()));
             response.setHeader("Content-Length", String.valueOf(fileLength));
             response.setContentType("image/jpg");
             IoUtil.copy(ins, response.getOutputStream());
@@ -234,6 +235,7 @@ public class SnapServiceImpl implements ISnapService {
 
     /**
      * 写错误
+     *
      * @param response
      */
     private void writeError(HttpServletResponse response) {
@@ -247,6 +249,7 @@ public class SnapServiceImpl implements ISnapService {
 
     /**
      * 释放资源
+     *
      * @param deCodecCtx
      * @param enCodecCtx
      * @param iFmtCtx
@@ -255,7 +258,8 @@ public class SnapServiceImpl implements ISnapService {
      * @param srcPacket
      * @param packet
      */
-    private void free(AVCodecContext deCodecCtx, AVCodecContext enCodecCtx, AVFormatContext iFmtCtx, AVFormatContext oFmtCtx, AVFrame frame, AVPacket srcPacket, AVPacket packet) {
+    private void free(String url, AVCodecContext deCodecCtx, AVCodecContext enCodecCtx, AVFormatContext iFmtCtx, AVFormatContext oFmtCtx, AVFrame frame, AVPacket srcPacket, AVPacket packet) {
+        log.info("【截图】释放流地址：{} 资源", url);
         if (deCodecCtx != null) {
             avcodec.avcodec_free_context(deCodecCtx);
         }

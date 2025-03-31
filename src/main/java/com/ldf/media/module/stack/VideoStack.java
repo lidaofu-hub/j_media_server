@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.ldf.media.api.model.param.VideoStackParam;
 import com.ldf.media.api.model.param.VideoStackWindowParam;
 import com.ldf.media.pool.MediaServerThreadPool;
+import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
@@ -29,12 +30,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 
+@Slf4j
 public class VideoStack {
 
     private static int FPS = 25;
@@ -43,9 +42,9 @@ public class VideoStack {
 
     private Long pts = 0L;
 
-    private Long lastPushTime=0L;
+    private Long lastPushTime = 0L;
 
-    private Long pushWaitTime=0L;
+    private Long pushWaitTime = 0L;
 
     private VideoStackParam param;
 
@@ -75,13 +74,10 @@ public class VideoStack {
 
     private IntPointer linePointer = null;
 
-    private AtomicBoolean readDataAtomic=null;
-
     private Set<Integer> EMPTY_WINDOW_SET = new LinkedHashSet<>();
 
     private List<VideoStackWindow> windowList = new ArrayList<>();
 
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VideoStack(VideoStackParam param, String pushUrl) {
         this.param = param;
@@ -117,9 +113,8 @@ public class VideoStack {
         dataPointer = new PointerPointer<>(4);
         linePointer = new IntPointer(4);
         srcDataSize = avutil.av_image_fill_arrays(dataPointer, linePointer, new BytePointer(srcPointer), avutil.AV_PIX_FMT_BGR24, param.getWidth(), param.getHeight(), 1);
-        lastPushTime=System.currentTimeMillis();
-        pushWaitTime= (long) (1000/FPS);
-        readDataAtomic=new AtomicBoolean(false);
+        lastPushTime = System.currentTimeMillis();
+        pushWaitTime = (long) (1000 / FPS);
     }
 
 
@@ -219,9 +214,10 @@ public class VideoStack {
                 int[] whp = calculateBlockDimensions(videoStackWindowParam.getSpan(), param.getWidth(), param.getHeight(), param.getRow(), param.getCol());
                 VideoStackWindow videoStackWindow = null;
                 if (StrUtil.isNotBlank(videoStackWindowParam.getUrl())) {
-                    videoStackWindow = new VideoStackWindow(videoStackWindowParam.getUrl(), true, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer,readDataAtomic,param.getDeCodecName());
+                    videoStackWindow = new VideoStackWindow(videoStackWindowParam.getUrl(), true, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer);
                 } else {
-                    videoStackWindow = new VideoStackWindow(StrUtil.isNotBlank(videoStackWindowParam.getImgUrl()) ? videoStackWindowParam.getUrl() : param.getFillImgUrl(), false, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer,readDataAtomic,param.getDeCodecName());
+                    videoStackWindow = new VideoStackWindow(StrUtil.isNotBlank(videoStackWindowParam.getImgUrl()) ? videoStackWindowParam.getUrl() : param.getFillImgUrl(), false, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer)
+                    ;
                 }
                 videoStackWindow.init();
                 windowList.add(videoStackWindow);
@@ -300,9 +296,7 @@ public class VideoStack {
             if (avutil.av_frame_is_writable(avFrame) != 1) {
                 avutil.av_frame_make_writable(avFrame);
             }
-            readDataAtomic.compareAndSet(false,true);
             swscale.sws_scale(avSwsCtx, dataPointer, linePointer, 0, param.getHeight(), avFrame.data(), avFrame.linesize());
-            readDataAtomic.compareAndSet(true,false);
             avFrame.pts(pts);
             pts++;
             ret = avcodec.avcodec_send_frame(enCodecCtx, avFrame);
@@ -336,7 +330,7 @@ public class VideoStack {
                 } else {
                     avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
                 }
-                lastPushTime=System.currentTimeMillis();
+                lastPushTime = System.currentTimeMillis();
                 avcodec.av_packet_unref(avPacket);
             }
 
@@ -393,7 +387,7 @@ public class VideoStack {
             videoStackWindow.stop();
         }
         windowList.clear();
-        param=newParam;
+        param = newParam;
         //填充颜色
         initFillColor();
         //填充图片
@@ -420,6 +414,7 @@ public class VideoStack {
      * 释放资源
      */
     private void free() {
+        log.info("【拼接屏】释拼接屏任务：{} 资源",param.getId());
         if (oFmtCtx != null) {
             avformat.avformat_free_context(oFmtCtx);
             oFmtCtx = null;

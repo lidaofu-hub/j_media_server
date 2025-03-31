@@ -9,19 +9,19 @@ public interface IVideoStackService {
      * @param param
      * @return
      */
-    String startStack(VideoStackParam param);
+    void startStack(VideoStackParam param);
 
     /**
      * 重设拼接屏任务
      * @param param
      * @return
      */
-    String resetStack(VideoStackParam param);
+    void resetStack(VideoStackParam param);
 
     /**
      * 停止拼接屏任务
      * @param id
      * @return
      */
-    String stopStack(String id);
+    void stopStack(String id);
 }

@@ -40,29 +40,29 @@ public class ApiController {
     private final IVideoStackService iVideoStackService;
 
     @ApiOperation(value = "【拉流代理】添加rtmp/rtsp拉流代理", notes = "此接口不会返回具体流地址，请按照流地址生成规则结合自己网络信息来拼接具体地址")
-    @RequestMapping(value = "/addStreamProxy", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<String> addStreamProxy(@Validated StreamProxyParam param) {
+    @PostMapping(value = "/addStreamProxy")
+    public Result<String> addStreamProxy(@Validated @RequestBody StreamProxyParam param) {
         String error = iApiService.addStreamProxy(param);
         return new Result<>(error);
     }
 
     @ApiOperation(value = "【拉流代理】关闭拉流代理", notes = "流注册成功后，也可以使用close_streams接口替代")
-    @RequestMapping(value = "/delStreamProxy", method = {RequestMethod.POST, RequestMethod.GET})
+    @PostMapping(value = "/delStreamProxy" )
     public Result<Boolean> delStreamProxy(String key) {
         Boolean flag = iApiService.delStreamProxy(key);
         return new Result<>(flag);
     }
 
     @ApiOperation(value = "【推流代理】添加rtmp/rtsp推流代理")
-    @RequestMapping(value = "/addStreamPusherProxy", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<String> addStreamPusherProxy(@Validated StreamPushProxyParam param) {
+    @PostMapping(value = "/addStreamPusherProxy")
+    public Result<String> addStreamPusherProxy(@Validated @RequestBody StreamPushProxyParam param) {
         String error = iApiService.addStreamPusherProxy(param);
         return new Result<>(error);
     }
 
 
     @ApiOperation(value = "【推流代理】删除rtmp/rtsp推流代理")
-    @RequestMapping(value = "/delStreamPusherProxy", method = {RequestMethod.POST, RequestMethod.GET})
+    @PostMapping(value = "/delStreamPusherProxy")
     public Result<Boolean> delStreamPusherProxy(String key) {
         Boolean flag = iApiService.delStreamPusherProxy(key);
         return new Result<>(flag);
@@ -70,28 +70,28 @@ public class ApiController {
 
 
     @ApiOperation(value = "【流操作】关闭流")
-    @RequestMapping(value = "/close_stream", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Integer> closeStream(@Validated CloseStreamParam param) {
+    @PostMapping(value = "/close_stream")
+    public Result<Integer> closeStream(@Validated @RequestBody CloseStreamParam param) {
         Integer status = iApiService.closeStream(param);
         return new Result<>(status);
     }
 
     @ApiOperation(value = "【流操作】关闭流(批量关)")
-    @RequestMapping(value = "/close_streams", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Integer> closeStreams(@Validated CloseStreamsParam param) {
+    @PostMapping(value = "/close_streams")
+    public Result<Integer> closeStreams(@Validated @RequestBody CloseStreamsParam param) {
         Integer status = iApiService.closeStreams(param);
         return new Result<>(status);
     }
 
     @ApiOperation(value = "【流操作】获取流列表")
-    @RequestMapping(value = "/getMediaList", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/getMediaList")
     public Result<List<MediaInfoResult>> getMediaList(GetMediaListParam param) {
         List<MediaInfoResult> list = iApiService.getMediaList(param);
         return new Result<>(list);
     }
 
     @ApiOperation(value = "【流操作】获取流信息")
-    @RequestMapping(value = "/getMediaInfo", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/getMediaInfo")
     public Result<MediaInfoResult> getMediaInfo(@Validated MediaQueryParam param) {
         MediaInfoResult info = iApiService.getMediaInfo(param);
         return new Result<>(info);
@@ -99,7 +99,7 @@ public class ApiController {
 
 
     @ApiOperation(value = "【流操作】流是否在线")
-    @RequestMapping(value = "/isMediaOnline", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/isMediaOnline")
     public Result<Boolean> isMediaOnline(@Validated MediaQueryParam param) {
         Boolean online = iApiService.isMediaOnline(param);
         return new Result<>(online);
@@ -107,29 +107,29 @@ public class ApiController {
 
 
     @ApiOperation(value = "【录像】开始录像")
-    @RequestMapping(value = "/startRecord", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Boolean> startRecord(@Validated StartRecordParam param) {
+    @PostMapping(value = "/startRecord")
+    public Result<Boolean> startRecord(@Validated @RequestBody StartRecordParam param) {
         Boolean flag = iApiService.startRecord(param);
         return new Result<>(flag);
     }
 
 
     @ApiOperation(value = "【录像】停止录像")
-    @RequestMapping(value = "/stopRecord", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Boolean> stopRecord(@Validated StopRecordParam param) {
+    @PostMapping(value = "/stopRecord" )
+    public Result<Boolean> stopRecord(@Validated @RequestBody StopRecordParam param) {
         Boolean flag = iApiService.stopRecord(param);
         return new Result<>(flag);
     }
 
     @ApiOperation(value = "【录像】是否录像")
-    @RequestMapping(value = "/isRecording", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/isRecording" )
     public Result<Boolean> isRecording(@Validated RecordStatusParam param) {
         Boolean flag = iApiService.isRecording(param);
         return new Result<>(flag);
     }
 
     @ApiOperation(value = "【系统】获取内存资源信息")
-    @RequestMapping(value = "/getStatistic", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/getStatistic")
     public Result<Statistic> getStatistic() {
         Statistic statistic = iApiService.getStatistic();
         return new Result<>(statistic);
@@ -137,21 +137,21 @@ public class ApiController {
 
 
     @ApiOperation(value = "【系统】获取服务器配置")
-    @RequestMapping(value = "/getServerConfig", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/getServerConfig")
     public Result<String> getServerConfig() {
         String confStr = iApiService.getServerConfig();
         return new Result<>(confStr);
     }
 
     @ApiOperation(value = "【系统】重启流媒体服务")
-    @RequestMapping(value = "/restartServer", method = {RequestMethod.POST, RequestMethod.GET})
+    @PostMapping(value = "/restartServer")
     public Result<Boolean> restartServer() {
         Boolean status = iApiService.restartServer();
         return new Result<>(status);
     }
 
     @ApiOperation(value = "【系统】设置服务器配置")
-    @RequestMapping(value = "/setServerConfig", method = {RequestMethod.POST, RequestMethod.GET})
+    @PostMapping(value = "/setServerConfig")
     public Result<Integer> setServerConfig(HttpServletRequest request) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         Integer size = iApiService.setServerConfig(parameterMap);
@@ -160,22 +160,22 @@ public class ApiController {
 
 
     @ApiOperation(value = "【RTP服务】开启rtp服务")
-    @RequestMapping(value = "/openRtpServer", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<Integer> openRtpServer(@Validated OpenRtpServerParam param) {
+    @PostMapping(value = "/openRtpServer")
+    public Result<Integer> openRtpServer(@Validated @RequestBody OpenRtpServerParam param) {
         Integer port = iApiService.openRtpServer(param);
         return new Result<>(port);
     }
 
     @ApiOperation(value = "【RTP服务】关闭rtp服务")
     @ApiImplicitParam(name = "stream", value = "流id", required = true)
-    @RequestMapping(value = "/closeRtpServer", method = {RequestMethod.POST, RequestMethod.GET})
+    @PostMapping(value = "/closeRtpServer")
     public Result<Integer> closeRtpServer(@NotBlank(message = "流id不为空") @RequestParam(value = "stream") String stream) {
         Integer status = iApiService.closeRtpServer(stream);
         return new Result<>(status);
     }
 
     @ApiOperation(value = "【RTP服务】获取所有RTP服务器")
-    @RequestMapping(value = "/listRtpServer", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/listRtpServer")
     public Result<List<RtpServerResult>> listRtpServer() {
         List<RtpServerResult> results = iApiService.listRtpServer();
         return new Result<>(results);
@@ -183,40 +183,38 @@ public class ApiController {
 
     @ApiOperation(value = "【截图】获取截图")
     @ApiImplicitParam(name = "url", value = "截图流地址", required = true)
-    @RequestMapping(value = "/getSnap", method = {RequestMethod.POST, RequestMethod.GET})
+    @GetMapping(value = "/getSnap")
     public void getSnap(String url, HttpServletResponse response) {
         iSnapService.getSnap(url, response);
 
     }
 
     @ApiOperation(value = "【转码】拉流代理转码(beta)", notes = "默认H265转H264 支持分辨率调整 暂时只支持视频转码，音频因为各种封装格式对编码格式、音频参数等转换规则复杂暂时不支持")
-    @RequestMapping(value = "/transcode", method = {RequestMethod.POST, RequestMethod.GET})
-    public Result<String> transcode(@Validated TranscodeParam param) {
-        new Thread(() -> {
-            iTranscodeService.transcode(param);
-        }).start();
+    @PostMapping(value = "/transcode")
+    public Result<String> transcode(@Validated @RequestBody TranscodeParam param) {
+        iTranscodeService.transcode(param);
         return new Result<>();
     }
 
     @ApiOperation(value = "【拼接屏】开启拼接屏(beta)")
-    @RequestMapping(value = "/stack/start", method = {RequestMethod.POST})
+    @PostMapping(value = "/stack/start" )
     public Result<String> startStack(@RequestBody @Validated VideoStackParam param) {
-        String info = iVideoStackService.startStack(param);
-        return new Result<>(info);
+      iVideoStackService.startStack(param);
+        return new Result<>();
     }
 
     @ApiOperation(value = "【拼接屏】重新设置拼接屏(beta)")
-    @RequestMapping(value = "/stack/reset", method = {RequestMethod.POST})
+    @PostMapping(value = "/stack/reset" )
     public Result<String> resetStack(@RequestBody @Validated VideoStackParam param) {
-        String info = iVideoStackService.resetStack(param);
-        return new Result<>(info);
+        iVideoStackService.resetStack(param);
+        return new Result<>();
     }
 
     @ApiOperation(value = "【拼接屏】关闭拼接屏(beta)")
     @ApiImplicitParam(name = "id", value = "拼接屏任务id", required = true)
-    @RequestMapping(value = "/stack/stop", method = {RequestMethod.POST})
-    public Result<String> stopStack(String id) {
-        String info = iVideoStackService.stopStack(id);
-        return new Result<>(info);
+    @PostMapping(value = "/stack/stop")
+    public Result<String> stopStack(@NotBlank(message = "拼接屏任务id不为空") @RequestParam(value = "id")String id) {
+         iVideoStackService.stopStack(id);
+        return new Result<>();
     }
 }

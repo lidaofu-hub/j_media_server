@@ -1,9 +1,12 @@
 package com.ldf.media.api.service.impl;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
+import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
 import com.ldf.media.api.model.param.VideoStackParam;
 import com.ldf.media.api.service.IVideoStackService;
 import com.ldf.media.config.MediaServerConfig;
+import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.module.stack.VideoStack;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.ldf.media.context.MediaServerContext.ZLM_API;
 
 @Slf4j
 @Service
@@ -21,36 +26,29 @@ public class VideoStackService implements IVideoStackService {
 
 
     @Override
-    public String startStack(VideoStackParam param) {
-        if (VIDEO_STACK_MAP.containsKey(param.getId())){
-            return "任务已存在";
-        }
+    public void startStack(VideoStackParam param) {
+        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2("rtmp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getId(), 0);
+        Assert.isNull(mkMediaSource, "当前流已在线");
+        Assert.isFalse(VIDEO_STACK_MAP.containsKey(param.getId()), "拼接屏任务已存在");
         String pushUrl = StrUtil.format("rtmp://127.0.0.1:{}/{}/{}", mediaServerConfig.getRtmp_port(), param.getApp(), param.getId());
         VideoStack videoStack = new VideoStack(param, pushUrl);
         videoStack.init();
         VIDEO_STACK_MAP.put(param.getId(), videoStack);
-        return "success";
     }
 
 
     @Override
-    public String resetStack(VideoStackParam param) {
+    public void resetStack(VideoStackParam param) {
         VideoStack videoStack = VIDEO_STACK_MAP.get(param.getId());
-        if (videoStack != null) {
-            videoStack.reset(param);
-            return "success";
-        }
-        return "任务不存在";
+        Assert.isTrue(VIDEO_STACK_MAP.containsKey(param.getId()), "拼接屏任务不存在");
+        videoStack.reset(param);
     }
 
     @Override
-    public String stopStack(String id) {
+    public void stopStack(String id) {
         VideoStack videoStack = VIDEO_STACK_MAP.get(id);
-        if (videoStack != null) {
-            videoStack.stop();
-            VIDEO_STACK_MAP.remove(id);
-            return "success";
-        }
-        return "任务不存在";
+        Assert.isTrue(VIDEO_STACK_MAP.containsKey(id), "拼接屏任务不存在");
+        videoStack.stop();
+        VIDEO_STACK_MAP.remove(id);
     }
 }
