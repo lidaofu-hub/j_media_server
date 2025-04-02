@@ -1,6 +1,7 @@
 package com.ldf.media.module.stack;
 
 import cn.hutool.core.util.StrUtil;
+import com.ldf.media.api.model.param.VideoStackWindowParam;
 import com.ldf.media.pool.MediaServerThreadPool;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
@@ -19,13 +20,16 @@ import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
 
 import static com.ldf.media.module.stack.VideoStack.getImageBGRData;
-import static org.bytedeco.ffmpeg.global.avutil.*;
+import static org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF;
+import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 import static org.bytedeco.ffmpeg.presets.avutil.AVERROR_EAGAIN;
+
 @Slf4j
 public class VideoStackWindow {
-    private String url;
 
-    private Boolean isVideo;
+    private VideoStackWindowParam param;
+
+    private String fillImgUrl;
 
     private Integer width;
 
@@ -34,6 +38,8 @@ public class VideoStackWindow {
     private Integer yPos;
 
     private Integer vIndex;
+
+    private Integer lineWidth;
 
     private PointerPointer<Pointer> dataPointer;
 
@@ -62,9 +68,9 @@ public class VideoStackWindow {
     private Boolean isStop = false;
 
 
-    public VideoStackWindow(String url, Boolean isVideo, Integer width, Integer height, Integer yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
-        this.url = url;
-        this.isVideo = isVideo;
+    public VideoStackWindow(VideoStackWindowParam param, String fillImgUrl, int width, int height, int yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
+        this.param = param;
+        this.fillImgUrl = fillImgUrl;
         this.width = width;
         this.height = height;
         this.yPos = yPos;
@@ -74,14 +80,37 @@ public class VideoStackWindow {
 
 
     public void init() {
-        if (StrUtil.isNotBlank(url)) {
-            if (isVideo) {
-                MediaServerThreadPool.execute(() -> {
-                    initVideo();
-                });
-            } else {
-                initImg();
+        if (StrUtil.isNotBlank(param.getVideoUrl())) {
+            MediaServerThreadPool.execute(() -> {
+                initFillVideo();
+            });
+        } else if (StrUtil.isNotBlank(param.getImgUrl())) {
+            initFillImg(param.getImgUrl());
+        } else if (StrUtil.isNotBlank(param.getFillColor())) {
+            initFillColor(param.getFillColor());
+        } else if (StrUtil.isNotBlank(fillImgUrl)) {
+            initFillImg(fillImgUrl);
+        }
+    }
+
+    /**
+     * 填充颜色
+     *
+     * @param fillColor
+     */
+    private void initFillColor(String fillColor) {
+        int[] bgr = VideoStack.convertRGBHex(fillColor);
+        BytePointer bytePointer = new BytePointer(dataPointer.get(0).getPointer(yPos));
+        long yDiff = linePointer.get(0);
+        long yImgPos = 0L;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                long xImgPos = x * 3L;
+                bytePointer.put(yImgPos + xImgPos, (byte) bgr[0]);
+                bytePointer.put(yImgPos + xImgPos + 1, (byte) bgr[1]);
+                bytePointer.put(yImgPos + xImgPos + 2, (byte) bgr[2]);
             }
+            yImgPos = yImgPos + yDiff;
         }
     }
 
@@ -89,18 +118,18 @@ public class VideoStackWindow {
     /**
      * 填充视频
      */
-    private void initVideo() {
+    private void initFillVideo() {
         int ret = 0;
         System.out.println(avutil.avutil_configuration());
         iFmtCtx = new AVFormatContext(null);
-        boolean isRtsp = url.startsWith("rtsp");
+        boolean isRtsp = param.getVideoUrl().startsWith("rtsp");
         if (isRtsp) {
             AVDictionary rtspOptions = new AVDictionary(null);
             avutil.av_dict_set(rtspOptions, "rtsp_transport", "tcp", 0);
-            ret = avformat.avformat_open_input(iFmtCtx, url, null, rtspOptions);
+            ret = avformat.avformat_open_input(iFmtCtx, param.getVideoUrl(), null, rtspOptions);
             avutil.av_dict_free(rtspOptions);
         } else {
-            ret = avformat.avformat_open_input(iFmtCtx, url, null, null);
+            ret = avformat.avformat_open_input(iFmtCtx, param.getVideoUrl(), null, null);
         }
         if (ret < 0) {
             avutil.av_log(iFmtCtx, AV_LOG_ERROR, "avformat_open_input error \n");
@@ -210,8 +239,8 @@ public class VideoStackWindow {
     /**
      * 填充图像
      */
-    private void initImg() {
-        VideoStack.ImageData imageData = getImageBGRData(url);
+    private void initFillImg(String imgUrl) {
+        VideoStack.ImageData imageData = getImageBGRData(imgUrl);
         if (imageData != null) {
             imgSwsCtx = swscale.sws_getContext(imageData.width, imageData.height, avutil.AV_PIX_FMT_BGR24, width, height, avutil.AV_PIX_FMT_BGR24, swscale.SWS_BICUBIC, null, null, (DoublePointer) null);
             if (imgSwsCtx != null) {
@@ -254,7 +283,9 @@ public class VideoStackWindow {
      * 释放资源
      */
     private void free() {
-        log.info("【拼接屏窗口】释放流地址：{} 资源",url);
+        if (StrUtil.isNotBlank(param.getVideoUrl())) {
+            log.info("【拼接屏窗口】 释放区域：{} 资源", param.getVideoUrl());
+        }
         if (iFmtCtx != null) {
             avformat.avformat_close_input(iFmtCtx);
             iFmtCtx = null;

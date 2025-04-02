@@ -1,6 +1,7 @@
 package com.ldf.media.module.stack;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.ldf.media.api.model.param.VideoStackParam;
 import com.ldf.media.api.model.param.VideoStackWindowParam;
@@ -40,6 +41,8 @@ public class VideoStack {
 
     private Boolean isStop = false;
 
+    private Boolean initStatus = false;
+
     private Long pts = 0L;
 
     private Long lastPushTime = 0L;
@@ -74,8 +77,6 @@ public class VideoStack {
 
     private IntPointer linePointer = null;
 
-    private Set<Integer> EMPTY_WINDOW_SET = new LinkedHashSet<>();
-
     private List<VideoStackWindow> windowList = new ArrayList<>();
 
 
@@ -98,6 +99,7 @@ public class VideoStack {
         initGridLine();
         //初始化窗口
         initStackWindow();
+        initStatus = true;
         MediaServerThreadPool.execute(() -> {
             initEncodeAndPush();
         });
@@ -145,15 +147,16 @@ public class VideoStack {
      * 填充图片
      */
     private void initFillImage() {
+        Set<Integer> windowSet = new LinkedHashSet<>();
         Integer windowSize = param.getCol() * param.getRow();
         for (int i = 1; i <= windowSize; i++) {
-            EMPTY_WINDOW_SET.add(i);
+            windowSet.add(i);
         }
         List<VideoStackWindowParam> urlList = param.getWindowList();
         if (CollectionUtil.isNotEmpty(urlList)) {
             for (VideoStackWindowParam videoStackUrlParam : urlList) {
                 for (Integer i : videoStackUrlParam.getSpan()) {
-                    EMPTY_WINDOW_SET.remove(i);
+                    windowSet.remove(i);
                 }
             }
         }
@@ -176,7 +179,7 @@ public class VideoStack {
                     swscale.sws_scale(imgSwsCtx, srcDataPointerPointer, srcLineSize, 0, imageData.height, destDataPointerPointer, destLineSize);
                     int diffW = linePointer.get(0);
                     int destW = destLineSize.get(0);
-                    for (Integer index : EMPTY_WINDOW_SET) {
+                    for (Integer index : windowSet) {
                         int ySrcPos = ((index - 1) / param.getRow()) * diffW * h + ((index - 1) % param.getRow()) * destW;
                         int yImgPos = 0;
                         for (int i = 0; i < h; i++) {
@@ -211,14 +214,8 @@ public class VideoStack {
         List<VideoStackWindowParam> urlList = param.getWindowList();
         if (CollectionUtil.isNotEmpty(urlList)) {
             for (VideoStackWindowParam videoStackWindowParam : urlList) {
-                int[] whp = calculateBlockDimensions(videoStackWindowParam.getSpan(), param.getWidth(), param.getHeight(), param.getRow(), param.getCol());
-                VideoStackWindow videoStackWindow = null;
-                if (StrUtil.isNotBlank(videoStackWindowParam.getUrl())) {
-                    videoStackWindow = new VideoStackWindow(videoStackWindowParam.getUrl(), true, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer);
-                } else {
-                    videoStackWindow = new VideoStackWindow(StrUtil.isNotBlank(videoStackWindowParam.getImgUrl()) ? videoStackWindowParam.getUrl() : param.getFillImgUrl(), false, whp[0], whp[1], whp[2] * 3, dataPointer, linePointer)
-                    ;
-                }
+                int[] whp = calculateBlockDimensions(videoStackWindowParam.getSpan(), param.getWidth(), param.getHeight(), param.getRow(), param.getCol(), linePointer.get(0));
+                VideoStackWindow videoStackWindow = new VideoStackWindow(videoStackWindowParam, param.getFillImgUrl(), whp[0], whp[1], whp[2], dataPointer, linePointer);
                 videoStackWindow.init();
                 windowList.add(videoStackWindow);
             }
@@ -339,43 +336,6 @@ public class VideoStack {
         free();
     }
 
-    /**
-     * 计算矩形大小
-     *
-     * @param blockNumbers
-     * @param width
-     * @param height
-     * @param row
-     * @param col
-     * @return
-     */
-    public static int[] calculateBlockDimensions(List<Integer> blockNumbers, int width, int height, int row, int col) {
-        int blockWidth = width / col;
-        int blockHeight = height / row;
-
-        int minRow = row;
-        int maxRow = 0;
-        int minCol = col;
-        int maxCol = 0;
-
-        for (int blockNumber : blockNumbers) {
-            int index = blockNumber - 1;
-            int currentRow = index / col;
-            int currentCol = index % col;
-
-            minRow = Math.min(minRow, currentRow);
-            maxRow = Math.max(maxRow, currentRow);
-            minCol = Math.min(minCol, currentCol);
-            maxCol = Math.max(maxCol, currentCol);
-        }
-
-        int combinedWidth = (maxCol - minCol + 1) * blockWidth;
-        int combinedHeight = (maxRow - minRow + 1) * blockHeight;
-        int startIndex = (minRow * blockHeight) * width + (minCol * blockWidth);
-
-        return new int[]{combinedWidth, combinedHeight, startIndex};
-    }
-
 
     /**
      * 重新配置
@@ -383,6 +343,8 @@ public class VideoStack {
      * @param newParam
      */
     public void reset(VideoStackParam newParam) {
+        Assert.isTrue(initStatus, "拼接屏任务尚未初始化成功，请稍后再试");
+        initStatus = false;
         for (VideoStackWindow videoStackWindow : windowList) {
             videoStackWindow.stop();
         }
@@ -396,6 +358,7 @@ public class VideoStack {
         initGridLine();
         //初始化窗口
         initStackWindow();
+
     }
 
 
@@ -414,7 +377,7 @@ public class VideoStack {
      * 释放资源
      */
     private void free() {
-        log.info("【拼接屏】释拼接屏任务：{} 资源",param.getId());
+        log.info("【拼接屏】释拼接屏任务：{} 资源", param.getId());
         if (oFmtCtx != null) {
             avformat.avformat_free_context(oFmtCtx);
             oFmtCtx = null;
@@ -491,6 +454,42 @@ public class VideoStack {
         public byte[] bgrData;
     }
 
+    /**
+     * 计算矩形大小
+     *
+     * @param blockNumbers
+     * @param width
+     * @param height
+     * @param row
+     * @param col
+     * @return
+     */
+    public static int[] calculateBlockDimensions(List<Integer> blockNumbers, int width, int height, int row, int col, int linesize) {
+        int blockWidth = (width / col);
+        int blockHeight = height / row;
+
+        int minRow = row;
+        int maxRow = 0;
+        int minCol = col;
+        int maxCol = 0;
+
+        for (int blockNumber : blockNumbers) {
+            int index = blockNumber - 1;
+            int currentRow = index / col;
+            int currentCol = index % col;
+
+            minRow = Math.min(minRow, currentRow);
+            maxRow = Math.max(maxRow, currentRow);
+            minCol = Math.min(minCol, currentCol);
+            maxCol = Math.max(maxCol, currentCol);
+        }
+
+        int combinedWidth = (maxCol - minCol + 1) * blockWidth;
+        int combinedHeight = (maxRow - minRow + 1) * blockHeight;
+        int startIndex = (minRow * blockHeight) * linesize + (minCol * blockWidth * 3);
+
+        return new int[]{combinedWidth, combinedHeight, startIndex};
+    }
 
     /**
      * 为BGR24格式的Frame添加网格分割线
@@ -529,7 +528,6 @@ public class VideoStack {
         // 绘制垂直分割线
         for (int currentCol = 1; currentCol < col; currentCol++) {
             int xPos = currentCol * blockWidth;
-
             for (int w = 0; w < lineWidth; w++) {
                 int currentX = Math.min(xPos + w, width - 1);
                 for (int y = 0; y < height; y++) {

@@ -53,9 +53,6 @@ public class VideoStackParam implements Serializable {
     @ApiModelProperty(value = "分割线宽度")
     private Integer gridLineWidth = 1;
 
-//    @ApiModelProperty(value = "解码器名称(因驱动问题暂不实现)",notes = "不填则使用cpu解码 确保驱动存在例如 h264_qsv、 h264_cuvid、hevc_qsv、 hevc_cuvid、hevc_amf ")
-//    private String deCodecName;
-
     @ApiModelProperty(value = "拼接屏内容")
     private List<VideoStackWindowParam> windowList;
 
