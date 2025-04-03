@@ -22,6 +22,9 @@ public class VideoStackParam implements Serializable {
     @ApiModelProperty(value = "拼接屏任务流app")
     private String app = "live";
 
+    @ApiModelProperty(value = "推流地址",notes = "如果传了pushUrl将不在本地产生流")
+    private String pushUrl;
+
     @NotNull(message = "拼接屏行数不为空")
     @ApiModelProperty(value = "拼接屏行数", required = true)
     private Integer row;

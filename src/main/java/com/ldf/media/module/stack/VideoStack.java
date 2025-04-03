@@ -3,8 +3,11 @@ package com.ldf.media.module.stack;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
+import com.aizuda.zlm4j.structure.MK_INI;
+import com.aizuda.zlm4j.structure.MK_MEDIA;
 import com.ldf.media.api.model.param.VideoStackParam;
 import com.ldf.media.api.model.param.VideoStackWindowParam;
+import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.pool.MediaServerThreadPool;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
@@ -32,7 +35,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.ldf.media.context.MediaServerContext.ZLM_API;
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
+import static org.bytedeco.ffmpeg.global.avutil.av_make_q;
 
 @Slf4j
 public class VideoStack {
@@ -43,6 +48,8 @@ public class VideoStack {
 
     private Boolean initStatus = false;
 
+    private Boolean isPush = false;
+
     private Long pts = 0L;
 
     private Long lastPushTime = 0L;
@@ -51,11 +58,11 @@ public class VideoStack {
 
     private VideoStackParam param;
 
-    private String pushUrl;
-
     private AVFormatContext oFmtCtx = null;
 
     private AVCodecContext enCodecCtx = null;
+
+    private MK_MEDIA mkMedia = null;
 
     private AVStream avStream = null;
 
@@ -80,9 +87,11 @@ public class VideoStack {
     private List<VideoStackWindow> windowList = new ArrayList<>();
 
 
-    public VideoStack(VideoStackParam param, String pushUrl) {
+    public VideoStack(VideoStackParam param) {
         this.param = param;
-        this.pushUrl = pushUrl;
+        if (StrUtil.isNotBlank(param.getPushUrl())) {
+            isPush = true;
+        }
     }
 
     /**
@@ -248,21 +257,33 @@ public class VideoStack {
             free();
             return;
         }
-        oFmtCtx = new AVFormatContext(null);
-        ret = avformat.avformat_alloc_output_context2(oFmtCtx, null, "flv", pushUrl);
-        if (ret < 0) {
-            avutil.av_log(enCodecCtx, avutil.AV_LOG_ERROR, "avformat_alloc_output_context2 error");
-            free();
-            return;
+        if (isPush) {
+            oFmtCtx = new AVFormatContext(null);
+            ret = avformat.avformat_alloc_output_context2(oFmtCtx, null, "flv", param.getPushUrl());
+            if (ret < 0) {
+                avutil.av_log(enCodecCtx, avutil.AV_LOG_ERROR, "avformat_alloc_output_context2 error");
+                free();
+                return;
+            }
+            avStream = avformat.avformat_new_stream(oFmtCtx, null);
+            ret = avcodec.avcodec_parameters_from_context(avStream.codecpar(), enCodecCtx);
+            if (ret < 0) {
+                avutil.av_log(enCodecCtx, avutil.AV_LOG_ERROR, "avcodec_parameters_from_context error");
+                free();
+                return;
+            }
+            avStream.codecpar().codec_tag(0);
+        } else {
+            MK_INI mkIni = ZLM_API.mk_ini_create();
+            ZLM_API.mk_ini_set_option(mkIni, "enable_rtsp", "1");
+            ZLM_API.mk_ini_set_option(mkIni, "enable_rtmp", "1");
+            ZLM_API.mk_ini_set_option(mkIni, "enable_hls", "1");
+            ZLM_API.mk_ini_set_option_int(mkIni, "auto_close", 0);
+            mkMedia = ZLM_API.mk_media_create2(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getId(), -1, mkIni);
+            ZLM_API.mk_ini_release(mkIni);
+            ZLM_API.mk_media_init_video(mkMedia, 0, param.getWidth(), param.getHeight(), FPS, (int) enCodecCtx.bit_rate());
+            ZLM_API.mk_media_init_complete(mkMedia);
         }
-        avStream = avformat.avformat_new_stream(oFmtCtx, null);
-        ret = avcodec.avcodec_parameters_from_context(avStream.codecpar(), enCodecCtx);
-        if (ret < 0) {
-            avutil.av_log(enCodecCtx, avutil.AV_LOG_ERROR, "avcodec_parameters_from_context error");
-            free();
-            return;
-        }
-        avStream.codecpar().codec_tag(0);
         avPacket = avcodec.av_packet_alloc();
         avFrame = avutil.av_frame_alloc();
         avFrame.format(enCodecCtx.pix_fmt());
@@ -275,19 +296,21 @@ public class VideoStack {
             free();
             return;
         }
-        AVIOContext pb = new AVIOContext((Pointer) null);
-        ret = avformat.avio_open(pb, pushUrl, avformat.AVIO_FLAG_WRITE);
-        if (ret < 0) {
-            avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avio_open error \n");
-            free();
-            return;
-        }
-        oFmtCtx.pb(pb);
-        ret = avformat.avformat_write_header(oFmtCtx, (PointerPointer) null);
-        if (ret < 0) {
-            avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avformat_write_header error \n");
-            free();
-            return;
+        if (isPush) {
+            AVIOContext pb = new AVIOContext((Pointer) null);
+            ret = avformat.avio_open(pb, param.getPushUrl(), avformat.AVIO_FLAG_WRITE);
+            if (ret < 0) {
+                avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avio_open error \n");
+                free();
+                return;
+            }
+            oFmtCtx.pb(pb);
+            ret = avformat.avformat_write_header(oFmtCtx, (PointerPointer) null);
+            if (ret < 0) {
+                avutil.av_log(oFmtCtx, AV_LOG_ERROR, "avformat_write_header error \n");
+                free();
+                return;
+            }
         }
         while (!isStop) {
             if (avutil.av_frame_is_writable(avFrame) != 1) {
@@ -299,7 +322,9 @@ public class VideoStack {
             ret = avcodec.avcodec_send_frame(enCodecCtx, avFrame);
             if (ret < 0) {
                 avutil.av_log(enCodecCtx, avutil.AV_LOG_ERROR, "avcodec_send_frame error");
-                avformat.av_write_trailer(oFmtCtx);
+                if (isPush) {
+                    avformat.av_write_trailer(oFmtCtx);
+                }
                 free();
                 return;
             }
@@ -314,7 +339,7 @@ public class VideoStack {
                     free();
                     return;
                 }
-                avPacket.pts(avutil.av_rescale_q(avFrame.pts(), enCodecCtx.time_base(), avStream.time_base()));
+                avPacket.pts(avutil.av_rescale_q(avFrame.pts(), enCodecCtx.time_base(),av_make_q(1,1000)));
                 avPacket.dts(avPacket.pts());
                 avPacket.duration(pushWaitTime);
                 long elapsed = System.currentTimeMillis() - lastPushTime;
@@ -323,16 +348,26 @@ public class VideoStack {
                     while (System.currentTimeMillis() - lastPushTime < pushWaitTime) {
                         Thread.yield();
                     }
-                    avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
+                    if (isPush) {
+                        avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
+                    } else {
+                        ZLM_API.mk_media_input_h264(mkMedia, new com.sun.jna.Pointer(avPacket.data().address()), avPacket.size(), avPacket.pts(), avPacket.pts());
+                    }
                 } else {
-                    avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
+                    if (isPush) {
+                        avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
+                    } else {
+                        ZLM_API.mk_media_input_h264(mkMedia, new com.sun.jna.Pointer(avPacket.data().address()), avPacket.size(), avPacket.pts(), avPacket.pts());
+                    }
                 }
                 lastPushTime = System.currentTimeMillis();
                 avcodec.av_packet_unref(avPacket);
             }
 
         }
-        avformat.av_write_trailer(oFmtCtx);
+        if (isPush) {
+            avformat.av_write_trailer(oFmtCtx);
+        }
         free();
     }
 
@@ -386,6 +421,10 @@ public class VideoStack {
             avcodec.avcodec_free_context(enCodecCtx);
             enCodecCtx = null;
         }
+        if (avSwsCtx!=null){
+            swscale.sws_freeContext(avSwsCtx);
+            avSwsCtx=null;
+        }
         if (avFrame != null) {
             avutil.av_frame_free(avFrame);
             avFrame = null;
@@ -397,6 +436,10 @@ public class VideoStack {
         if (srcPointer != null) {
             avutil.av_free(srcPointer);
             avPacket = null;
+        }
+        if (mkMedia != null) {
+            ZLM_API.mk_media_release(mkMedia);
+            mkMedia=null;
         }
     }
 

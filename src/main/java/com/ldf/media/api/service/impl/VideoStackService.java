@@ -27,11 +27,13 @@ public class VideoStackService implements IVideoStackService {
 
     @Override
     public void startStack(VideoStackParam param) {
-        MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2("rtmp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getId(), 0);
-        Assert.isNull(mkMediaSource, "当前流已在线");
+        if (StrUtil.isBlank(param.getPushUrl())) {
+            MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2("rtmp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getId(), 0);
+            Assert.isNull(mkMediaSource, "当前流已在线");
+        }
         Assert.isFalse(VIDEO_STACK_MAP.containsKey(param.getId()), "拼接屏任务已存在");
-        String pushUrl = StrUtil.format("rtmp://127.0.0.1:{}/{}/{}", mediaServerConfig.getRtmp_port(), param.getApp(), param.getId());
-        VideoStack videoStack = new VideoStack(param, pushUrl);
+        //String pushUrl = StrUtil.format("rtmp://127.0.0.1:{}/{}/{}", mediaServerConfig.getRtmp_port(), param.getApp(), param.getId());
+        VideoStack videoStack = new VideoStack(param);
         videoStack.init();
         VIDEO_STACK_MAP.put(param.getId(), videoStack);
     }
