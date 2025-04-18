@@ -120,7 +120,6 @@ public class ApiServiceImpl implements IApiService {
             if (err != 0) {
                 log.warn("【MediaServer】拉流代理失败：{}", what);
                 queue.offer(what);
-                ZLM_API.mk_proxy_player_release(new MK_PROXY_PLAYER(pUser));
             } else {
                 queue.offer(key);
                 log.info("【MediaServer】拉流代理成功");
