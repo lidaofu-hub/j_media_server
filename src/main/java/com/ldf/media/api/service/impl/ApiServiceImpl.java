@@ -181,7 +181,6 @@ public class ApiServiceImpl implements IApiService {
             if (err_code != 0) {
                 queue.offer(err_msg);
                 log.warn("【MediaServer】推流代理失败：{}", err_msg);
-                ZLM_API.mk_pusher_release(new MK_PUSHER(user_data));
             } else {
                 queue.offer(key);
                 log.info("【MediaServer】推流代理成功");

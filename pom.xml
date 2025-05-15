@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.aizuda</groupId>
             <artifactId>zlm4j</artifactId>
-            <version>1.2.3</version>
+            <version>1.3.0</version>
         </dependency>
         <!--JavaCV相关依赖-->
         <dependency>
@@ -113,6 +113,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <finalName>j-media-server</finalName>
                     <includeSystemScope>true</includeSystemScope>
                 </configuration>
                 <executions>
