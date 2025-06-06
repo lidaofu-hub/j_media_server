@@ -1,5 +1,6 @@
 package com.ldf.media.api.service.impl;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.ldf.media.api.service.ISnapService;
@@ -24,10 +25,10 @@ import org.springframework.stereotype.Service;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import static org.bytedeco.ffmpeg.global.avutil.*;
 import static org.bytedeco.ffmpeg.presets.avutil.AVERROR_EAGAIN;
@@ -204,8 +205,9 @@ public class SnapServiceImpl implements ISnapService {
         avcodec.av_packet_unref(packet);
         avcodec.av_packet_unref(srcPacket);
         avformat.av_write_trailer(oFmtCtx);
-        writeImg(imgPath, response);
+        avformat.avio_close(pb);
         free(url, deCodecCtx, enCodecCtx, iFmtCtx, oFmtCtx, frame, srcPacket, packet);
+        writeImg(imgPath, response);
     }
 
     /**
@@ -220,7 +222,7 @@ public class SnapServiceImpl implements ISnapService {
             writeError(response);
         }
         Long fileLength = file.length();
-        try (InputStream ins = new FileInputStream(file)) {
+        try (InputStream ins = Files.newInputStream(file.toPath())) {
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setHeader("Access-Control-Allow-Methods", "OPTIONS,GET, POST, PUT, DELETE");
             response.setHeader("Content-Disposition", "inline;filename=" + imgPath.substring(imgPath.lastIndexOf("/") + 1, imgPath.length()));
@@ -230,6 +232,9 @@ public class SnapServiceImpl implements ISnapService {
         } catch (Exception e) {
             log.error("【Response】写入图片失败，原因：{}", e.getMessage());
             writeError(response);
+        } finally {
+            //主动删除录像
+            FileUtil.del(imgPath);
         }
     }
 

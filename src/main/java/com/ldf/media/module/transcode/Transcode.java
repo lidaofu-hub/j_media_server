@@ -19,6 +19,7 @@ import org.bytedeco.javacpp.DoublePointer;
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
 
+import static org.bytedeco.ffmpeg.global.avformat.AVFMT_NOFILE;
 import static org.bytedeco.ffmpeg.global.avutil.*;
 import static org.bytedeco.ffmpeg.presets.avutil.AVERROR_EAGAIN;
 
@@ -299,6 +300,9 @@ public class Transcode {
         if (iFmtCtx != null) {
             avformat.avformat_close_input(iFmtCtx);
             iFmtCtx = null;
+        }
+        if (oFmtCtx!=null && (oFmtCtx.flags() & AVFMT_NOFILE) == 0){
+            avformat.avio_closep(oFmtCtx.pb());
         }
         if (oFmtCtx != null) {
             avformat.avformat_free_context(oFmtCtx);

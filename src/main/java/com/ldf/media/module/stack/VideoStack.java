@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
+import static org.bytedeco.ffmpeg.global.avformat.AVFMT_NOFILE;
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
 import static org.bytedeco.ffmpeg.global.avutil.av_make_q;
 
@@ -413,6 +414,9 @@ public class VideoStack {
      */
     private void free() {
         log.info("【拼接屏】释拼接屏任务：{} 资源", param.getId());
+        if (oFmtCtx!=null && (oFmtCtx.flags() & AVFMT_NOFILE) == 0){
+            avformat.avio_closep(oFmtCtx.pb());
+        }
         if (oFmtCtx != null) {
             avformat.avformat_free_context(oFmtCtx);
             oFmtCtx = null;
