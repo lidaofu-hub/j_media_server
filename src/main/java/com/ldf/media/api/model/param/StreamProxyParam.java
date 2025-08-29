@@ -67,4 +67,7 @@ public class StreamProxyParam {
 
     @ApiModelProperty(value = "rtsp倍速")
     private BigDecimal rtspSpeed;
+
+    @ApiModelProperty(value = "自动关流")
+    private Integer autoClose = 1;
 }

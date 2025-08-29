@@ -1,14 +1,8 @@
 package com.ldf.media.api.controller;
 
 import com.ldf.media.api.model.param.*;
-import com.ldf.media.api.model.result.MediaInfoResult;
-import com.ldf.media.api.model.result.Result;
-import com.ldf.media.api.model.result.RtpServerResult;
-import com.ldf.media.api.model.result.Statistic;
-import com.ldf.media.api.service.IApiService;
-import com.ldf.media.api.service.ISnapService;
-import com.ldf.media.api.service.ITranscodeService;
-import com.ldf.media.api.service.IVideoStackService;
+import com.ldf.media.api.model.result.*;
+import com.ldf.media.api.service.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -38,16 +32,17 @@ public class ApiController {
     private final ISnapService iSnapService;
     private final ITranscodeService iTranscodeService;
     private final IVideoStackService iVideoStackService;
+    private final ITestVideoService iTestVideoService;
 
     @ApiOperation(value = "【拉流代理】添加rtmp/rtsp拉流代理", notes = "此接口不会返回具体流地址，请按照流地址生成规则结合自己网络信息来拼接具体地址")
     @PostMapping(value = "/addStreamProxy")
-    public Result<String> addStreamProxy(@Validated @RequestBody StreamProxyParam param) {
-        String error = iApiService.addStreamProxy(param);
-        return new Result<>(error);
+    public Result<StreamUrlResult> addStreamProxy(@Validated @RequestBody StreamProxyParam param) {
+        StreamUrlResult result = iApiService.addStreamProxy(param);
+        return new Result<>(result);
     }
 
     @ApiOperation(value = "【拉流代理】关闭拉流代理", notes = "流注册成功后，也可以使用close_streams接口替代")
-    @PostMapping(value = "/delStreamProxy" )
+    @PostMapping(value = "/delStreamProxy")
     public Result<Boolean> delStreamProxy(String key) {
         Boolean flag = iApiService.delStreamProxy(key);
         return new Result<>(flag);
@@ -115,14 +110,14 @@ public class ApiController {
 
 
     @ApiOperation(value = "【录像】停止录像")
-    @PostMapping(value = "/stopRecord" )
+    @PostMapping(value = "/stopRecord")
     public Result<Boolean> stopRecord(@Validated @RequestBody StopRecordParam param) {
         Boolean flag = iApiService.stopRecord(param);
         return new Result<>(flag);
     }
 
     @ApiOperation(value = "【录像】是否录像")
-    @GetMapping(value = "/isRecording" )
+    @GetMapping(value = "/isRecording")
     public Result<Boolean> isRecording(@Validated RecordStatusParam param) {
         Boolean flag = iApiService.isRecording(param);
         return new Result<>(flag);
@@ -197,14 +192,14 @@ public class ApiController {
     }
 
     @ApiOperation(value = "【拼接屏】开启拼接屏(beta)")
-    @PostMapping(value = "/stack/start" )
+    @PostMapping(value = "/stack/start")
     public Result<String> startStack(@RequestBody @Validated VideoStackParam param) {
-      iVideoStackService.startStack(param);
+        iVideoStackService.startStack(param);
         return new Result<>();
     }
 
     @ApiOperation(value = "【拼接屏】重新设置拼接屏(beta)")
-    @PostMapping(value = "/stack/reset" )
+    @PostMapping(value = "/stack/reset")
     public Result<String> resetStack(@RequestBody @Validated VideoStackParam param) {
         iVideoStackService.resetStack(param);
         return new Result<>();
@@ -213,8 +208,22 @@ public class ApiController {
     @ApiOperation(value = "【拼接屏】关闭拼接屏(beta)")
     @ApiImplicitParam(name = "id", value = "拼接屏任务id", required = true)
     @PostMapping(value = "/stack/stop")
-    public Result<String> stopStack(@NotBlank(message = "拼接屏任务id不为空") @RequestParam(value = "id")String id) {
-         iVideoStackService.stopStack(id);
+    public Result<String> stopStack(@NotBlank(message = "拼接屏任务id不为空") @RequestParam(value = "id") String id) {
+        iVideoStackService.stopStack(id);
         return new Result<>();
+    }
+
+    @ApiOperation(value = "【测试视频流】生成一路测试视频流", notes = "生成一路测试视频流")
+    @PostMapping(value = "/createTestVideo")
+    public Result<StreamUrlResult> createTestVideo(@Validated @RequestBody TestVideoParam param) {
+        StreamUrlResult result = iTestVideoService.createTestVideo(param);
+        return new Result<>(result);
+    }
+
+    @ApiOperation(value = "【测试视频流】停止一路测试视频流", notes = "停止一路测试视频流")
+    @PostMapping(value = "/stopTestVideo")
+    public Result<Boolean> stopTestVideo(@Validated @RequestBody CloseTestVideoParam param) {
+        Boolean result = iTestVideoService.stopTestVideo(param.getApp(), param.getStream());
+        return new Result<>(result);
     }
 }

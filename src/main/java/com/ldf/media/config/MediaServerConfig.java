@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "media")
 public class MediaServerConfig {
 
+    private String media_ip;
+
     private Integer thread_num;
 
     private Integer rtmp_port;

@@ -4,6 +4,7 @@ import com.ldf.media.api.model.param.*;
 import com.ldf.media.api.model.result.MediaInfoResult;
 import com.ldf.media.api.model.result.RtpServerResult;
 import com.ldf.media.api.model.result.Statistic;
+import com.ldf.media.api.model.result.StreamUrlResult;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.Map;
  **/
 public interface IApiService {
 
-    String addStreamProxy(StreamProxyParam param);
+    StreamUrlResult addStreamProxy(StreamProxyParam param);
 
     Boolean delStreamProxy(String key);
 
@@ -54,4 +55,5 @@ public interface IApiService {
     Integer closeRtpServer(String stream);
 
     List<RtpServerResult> listRtpServer();
+
 }

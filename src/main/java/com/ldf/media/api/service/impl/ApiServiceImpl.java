@@ -8,12 +8,10 @@ import com.aizuda.zlm4j.callback.IMKPushEventCallBack;
 import com.aizuda.zlm4j.callback.IMKRtpServerDetachCallBack;
 import com.aizuda.zlm4j.structure.*;
 import com.ldf.media.api.model.param.*;
-import com.ldf.media.api.model.result.MediaInfoResult;
-import com.ldf.media.api.model.result.RtpServerResult;
-import com.ldf.media.api.model.result.Statistic;
-import com.ldf.media.api.model.result.Track;
+import com.ldf.media.api.model.result.*;
 import com.ldf.media.api.service.IApiService;
 import com.ldf.media.callback.MKSourceFindCallBack;
+import com.ldf.media.config.MediaServerConfig;
 import com.ldf.media.constants.MediaServerConstants;
 import com.ldf.media.context.MediaServerContext;
 import com.sun.jna.Pointer;
@@ -45,6 +43,8 @@ import static com.ldf.media.context.MediaServerContext.ZLM_API;
 public class ApiServiceImpl implements IApiService {
     @Autowired
     private MediaServerContext context;
+    @Autowired
+    private MediaServerConfig config;
 
     /**
      * 拉流代理列表
@@ -79,7 +79,7 @@ public class ApiServiceImpl implements IApiService {
     private static final Map<String, IMKRtpServerDetachCallBack> RTP_SERVER_DETACH_CALL_BACK_MAP = new HashMap<>();
 
     @Override
-    public String addStreamProxy(StreamProxyParam param) {
+    public StreamUrlResult addStreamProxy(StreamProxyParam param) {
         String key = RandomUtil.randomString(10);
         //查询流是是否存在
         MK_MEDIA_SOURCE mkMediaSource = ZLM_API.mk_media_source_find2(param.getEnableRtmp() == 1 ? "rtmp" : "rtsp", MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), 0);
@@ -97,7 +97,7 @@ public class ApiServiceImpl implements IApiService {
         //ZLM_API.mk_ini_set_option(option,"mp4_save_path","D:/record");
         //ZLM_API.mk_ini_set_option(option,"hls_save_path","D:/record");
         ZLM_API.mk_ini_set_option_int(option, "add_mute_audio", 0);
-        ZLM_API.mk_ini_set_option_int(option, "auto_close", 1);
+        ZLM_API.mk_ini_set_option_int(option, "auto_close", param.getAutoClose());
 
         //创建拉流代理
         MK_PROXY_PLAYER mk_proxy = ZLM_API.mk_proxy_player_create4(MediaServerConstants.DEFAULT_VHOST, param.getApp(), param.getStream(), option, param.getRetryCount());
@@ -142,10 +142,11 @@ public class ApiServiceImpl implements IApiService {
         ZLM_API.mk_proxy_player_set_on_close(mk_proxy, imkProxyPlayCloseCallBack, mk_proxy.getPointer());
         try {
             String error = queue.poll(5, TimeUnit.SECONDS);
-            return error;
+            Assert.isTrue(key.equals(error), error);
+            return new StreamUrlResult(config, param, key);
         } catch (InterruptedException e) {
         }
-        return key;
+        return new StreamUrlResult(config, param, key);
     }
 
     @Override
@@ -516,7 +517,8 @@ public class ApiServiceImpl implements IApiService {
         if (RTP_SERVER_MAP.containsKey(param.getStream())) {
             return -1;
         }
-        MK_RTP_SERVER mkRtpServer = ZLM_API.mk_rtp_server_create(param.getPort().shortValue(), param.getTcp_mode(), param.getStream());
+        short port = param.getPort().shortValue();
+        MK_RTP_SERVER mkRtpServer = ZLM_API.mk_rtp_server_create(port, param.getTcp_mode(), param.getStream());
         if (mkRtpServer == null) {
             return -1;
         }

@@ -2,8 +2,11 @@ package com.ldf.media.callback;
 
 import com.aizuda.zlm4j.callback.IMKStreamChangeCallBack;
 import com.aizuda.zlm4j.structure.MK_MEDIA_SOURCE;
+import com.ldf.media.api.service.ITestVideoService;
 import com.ldf.media.api.service.ITranscodeService;
+import com.ldf.media.api.service.impl.ApiServiceImpl;
 import com.ldf.media.context.MediaServerContext;
+import com.ldf.media.module.test.TestVideo;
 import com.sun.jna.CallbackThreadInitializer;
 import com.sun.jna.Native;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Component;
 public class MKStreamChangeCallBack implements IMKStreamChangeCallBack {
     @Autowired
     private ITranscodeService transcodeService;
+    @Autowired
+    private ITestVideoService iTestVideoService;
 
     public MKStreamChangeCallBack() {
         Native.setCallbackThreadInitializer(this, new CallbackThreadInitializer(true, false, "MediaStreamChangeThread"));
@@ -39,8 +44,13 @@ public class MKStreamChangeCallBack implements IMKStreamChangeCallBack {
         String schema = MediaServerContext.ZLM_API.mk_media_source_get_schema(sender);
         //如果是regist是注销情况下无法获取流详细信息如观看人数等
         log.info("【MediaServer】APP:{} 流:{} 协议：{} {}", app, stream, schema, regist == 1 ? "注册" : "注销");
-        if (schema.equals("rtmp")&&regist==0){
+        //停止转码
+        if (schema.equals("rtmp") && regist == 0) {
             transcodeService.stopTranscode(stream);
+        }
+        //停止测试流
+        if (regist == 0) {
+            iTestVideoService.stopTestVideo(app,stream);
         }
     }
 }

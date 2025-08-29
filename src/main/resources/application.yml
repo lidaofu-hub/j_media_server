@@ -1,6 +1,7 @@
 server:
   port: 8899
 media: ##目前只增加部分重要配置，更多配置请自行配置
+  media_ip: 127.0.0.1 #播放流ip
   thread_num: 8
   rtmp_port: 7935
   rtsp_port: 7554

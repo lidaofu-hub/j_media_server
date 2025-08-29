@@ -1,263 +1,622 @@
-<html>
-  <meta charset="utf-8">
-  <head>
-    <title>ZLM RTC demo</title>
-    <script src="./ZLMRTCClient.js"></script>
-  </head>
-    
-  <body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地址列表</title>
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    <div style="text-align: center;">
-        <div>
-          <video id='video' controls autoplay style="text-align:left;">
-            Your browser is too old which doesn't support HTML5 video.
-          </video>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4eaf1 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+        }
 
-          <video id='selfVideo' controls autoplay style="text-align:right;">
-            Your browser is too old which doesn't support HTML5 video.
-          </video>
-        </div>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 1rem;
+        }
 
-        <div>
+        /* 标题样式 */
+        .page-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
 
-            <p>
-                <label for="streamUrl">url:</label>
-                <input type="text" style="co" id='streamUrl' value="http://192.168.1.101/index/api/webrtc?app=live&stream=xiong&type=play">
-            </p>
+        .page-title h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
 
-            <p>
-              <label for="simulcast">simulcast:</label>
-              <input type="checkbox" id='simulcast'>
-            </p>
-            <p>
-              <label for="useCamera">useCamera:</label>
-              <input type="checkbox" id='useCamera' checked="checked">
-            </p>
+        .page-title p {
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
 
+        /* 表单样式 */
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+        }
 
-            <p>
-              <label for="audioEnable">audioEnable:</label>
-              <input type="checkbox" id='audioEnable' checked="checked">
-            </p>
+        .form-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+        }
 
-            <p>
-              <label for="videoEnable">videoEnable:</label>
-              <input type="checkbox" id='videoEnable' checked="checked">
-            </p>
+        .form-field {
+            flex: 1;
+            min-width: 200px;
+        }
 
-            <p>
-              <label for="method">method(play or push or echo):</label>
-              <input type="radio" name="method" value="echo" >echo
-              <input type="radio" name="method" value="push" >push
-              <input type="radio" name="method" value="play" checked = true>play
-            </p>
-            <p>
-              <label for="resolution">resolution:</label>
-              <select id="resolution">
-              </select>
-            </p>
-            <p>
-              <label for="datachannel">datachannel:</label>
-              <input id='datachannel' name="datachannel" type="checkbox" value="0">
-            </p>
-            <button onclick="start()">开始(start)</button>
-            <button onclick="stop()">停止(stop)</button>
+        .form-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #475569;
+        }
 
-            <p>
-              <label for="msgsend">msgsend:</label>
-              <input type="text" id='msgsend' value="hello word !">
-            </p>
-            <p>
-              <label for="msgrecv">msgrecv:</label>
-              <input type="text" id='msgrecv' disabled>
-            </p>
-            <button onclick="send()">发送(send by datachannel)</button>
-            <button onclick="close()">关闭(close datachannel)</button>
-            
+        .form-field input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
 
-           
-            
-        </div>
+        .form-field input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .submit-btn {
+            margin-top: 30px;
+            padding: 0.75rem 2rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            min-width: 150px;
+        }
+
+        .submit-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .submit-btn:active {
+            background-color: #1d4ed8;
+        }
+
+        /* 链接卡片容器 */
+        .link-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .link-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* 链接卡片样式 */
+        .link-card {
+            display: block;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 图标样式 */
+        .icon-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .icon {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .doc-icon {
+            background-color: #3b82f6;
+        }
+
+        .player-icon {
+            background-color: #10b981;
+        }
+
+        .webrtc-icon {
+            background-color: #8b5cf6;
+        }
+
+        /* 卡片内容样式 */
+        .link-card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .link-card p {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .link-text {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .doc-link {
+            color: #3b82f6;
+        }
+
+        .player-link {
+            color: #10b981;
+        }
+
+        .webrtc-link {
+            color: #8b5cf6;
+        }
+
+        .link-text span {
+            margin-right: 0.5rem;
+        }
+
+        .link-text .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .link-card:hover .arrow {
+            transform: translateX(5px);
+        }
+
+        /* 页脚样式 */
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s linear 0.25s, opacity 0.25s;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 0s;
+        }
+
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: #1e293b;
+        }
+
+        .url-list {
+            list-style: none;
+        }
+
+        .url-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .url-item:last-child {
+            border-bottom: none;
+        }
+
+        .url-label {
+            flex: 0 0 120px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .url-value {
+            flex: 1;
+            padding: 0 1rem;
+            word-break: break-all;
+            color: #1e293b;
+        }
+
+        .copy-btn {
+            padding: 0.5rem 1rem;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .copy-btn.copied {
+            background-color: #10b981;
+            color: white;
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 错误提示 */
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 页面标题 -->
+    <div class="page-title">
+        <h1>JMediaServer测试页</h1>
+        <p>点击下方链接跳转到相应页面，便捷访问各项功能</p>
     </div>
 
-    <script>
-      var player = null
-      var recvOnly = true
-      var resArr = []
+    <!-- 输入框和按钮 -->
+    <div class="form-container">
+        <form id="streamForm" class="form-group">
+            <div class="form-field">
+                <label for="app">APP</label>
+                <input type="text" id="app" name="app" value="live" required>
+            </div>
+            <div class="form-field">
+                <label for="stream">流名称</label>
+                <input type="text" id="stream" name="stream" value="test" required>
+            </div>
+            <button type="submit" class="submit-btn" id="createBtn">
+                生成测试视频流
+            </button>
+        </form>
+        <div id="errorMsg" class="error-message" style="display: none;"></div>
+    </div>
 
-      var ishttps = 'https:' == document.location.protocol ? true : false
-      var isLocal = "file:" == document.location.protocol ? true : false
-      var url = document.location.protocol+"//"+window.location.host+"/index/api/webrtc?app=live&stream=test&type=play"
-      
+    <!-- 链接卡片网格 -->
+    <div class="link-grid">
+        <!-- 接口文档链接 -->
+        <a href="/doc.html" class="link-card">
+            <div class="icon-container doc-icon">
+                <span class="icon">📄</span>
+            </div>
+            <h2>接口文档</h2>
+            <p>查看系统接口详细说明与使用示例</p>
+            <div class="link-text doc-link">
+                <span>前往页面</span>
+                <span class="arrow">→</span>
+            </div>
+        </a>
 
-      if(!ishttps && !isLocal){
-        alert('本demo需要在https的网站访问 ,如果你要推流的话(this demo must access in site of https if you want push stream)')
-      }
+        <!-- 视频播放器链接 -->
+        <a href="play.html" class="link-card">
+            <div class="icon-container player-icon">
+                <span class="icon">▶️</span>
+            </div>
+            <h2>视频播放器</h2>
+            <p>使用Jessibuca播放器观看视频内容</p>
+            <div class="link-text player-link">
+                <span>前往页面</span>
+                <span class="arrow">→</span>
+            </div>
+        </a>
 
-      if(isLocal){
-        url = "http://127.0.0.1"+"/index/api/webrtc?app=live&stream=test&type=play"
-      }
-      document.getElementById('streamUrl').value = url
-      document.getElementsByName("method").forEach((el,idx)=>{
-        el.onclick=function(e){
-          let url = new URL(document.getElementById('streamUrl').value);
-          url.searchParams.set("type",el.value)
-          document.getElementById('streamUrl').value = url.toString()
-          
-          if(el.value == "play"){
-            recvOnly = true;
-          }else if(el.value == "echo"){ 
-            recvOnly = false;
-          }else{
-            recvOnly = false;
-          }
-        };
-      });
+        <!-- WebRTC测试链接 -->
+        <a href="/webrtc.html" class="link-card">
+            <div class="icon-container webrtc-icon">
+                <span class="icon">📹</span>
+            </div>
+            <h2>WebRTC测试</h2>
+            <p>测试实时音视频通信功能与性能</p>
+            <div class="link-text webrtc-link">
+                <span>前往页面</span>
+                <span class="arrow">→</span>
+            </div>
+        </a>
+    </div>
 
-      ZLMRTCClient.GetAllScanResolution().forEach((r,i)=>{
-          opt = document.createElement('option');
-          opt.text = r.label +"("+r.width+"x"+r.height+")";
-          opt.value = r;
-          document.getElementById("resolution").add(opt,null)
+    <!-- 页脚 -->
+    <footer>
+        <p>© 2025 JMediaServer</p>
+    </footer>
+</div>
 
-          //console.log(opt.text.match(/\d+/g))
+<!-- 结果弹窗 -->
+<div class="modal-overlay" id="resultModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title">视频流地址列表(请复制WS-FLV地址并点击下面播放器地址，测试播放)</h2>
+            <button class="close-btn" id="closeModal">&times;</button>
+        </div>
+        <ul class="url-list" id="urlList">
+            <!-- 结果将通过JS动态填充 -->
+        </ul>
+    </div>
+</div>
 
-        
-      })
-      function start_play(){
-        let elr = document.getElementById("resolution");
-        let res = elr.options[elr.selectedIndex].text.match(/\d+/g);
-        let h = parseInt(res.pop());
-        let w = parseInt(res.pop());
+<script>
+    // 获取DOM元素
+    const form = document.getElementById('streamForm');
+    const appInput = document.getElementById('app');
+    const streamInput = document.getElementById('stream');
+    const createBtn = document.getElementById('createBtn');
+    const resultModal = document.getElementById('resultModal');
+    const urlList = document.getElementById('urlList');
+    const closeModal = document.getElementById('closeModal');
+    const errorMsg = document.getElementById('errorMsg');
 
-        player = new ZLMRTCClient.Endpoint(
-                {
-                    element: document.getElementById('video'),// video 标签
-                    debug: true,// 是否打印日志
-                    zlmsdpUrl:document.getElementById('streamUrl').value,//流地址
-                    simulcast:document.getElementById('simulcast').checked,
-                    useCamera:document.getElementById('useCamera').checked,
-                    audioEnable:document.getElementById('audioEnable').checked,
-                    videoEnable:document.getElementById('videoEnable').checked,
-                    recvOnly:recvOnly,
-                    resolution:{w:w,h:h},
-                    usedatachannel:document.getElementById('datachannel').checked,
-                }
-            );
-    
-            player.on(ZLMRTCClient.Events.WEBRTC_ICE_CANDIDATE_ERROR,function(e)
-            {// ICE 协商出错
-                console.log('ICE 协商出错')
-            });
-    
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_REMOTE_STREAMS,function(e)
-            {//获取到了远端流，可以播放
-                console.log('播放成功',e.streams)
-            });
-    
-            player.on(ZLMRTCClient.Events.WEBRTC_OFFER_ANWSER_EXCHANGE_FAILED,function(e)
-            {// offer anwser 交换失败
-                console.log('offer anwser 交换失败',e)
-                stop();
-            });
-    
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_LOCAL_STREAM,function(s)
-            {// 获取到了本地流
-    
-              document.getElementById('selfVideo').srcObject=s;
-              document.getElementById('selfVideo').muted = true;
-              
-                //console.log('offer anwser 交换失败',e)
-            });
+    // 表单提交事件
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-            player.on(ZLMRTCClient.Events.CAPTURE_STREAM_FAILED,function(s)
-            {// 获取本地流失败
-    
-              console.log('获取本地流失败')
-            });
+        // 获取输入值
+        const app = appInput.value.trim();
+        const stream = streamInput.value.trim();
 
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_CONNECTION_STATE_CHANGE,function(state)
-            {// RTC 状态变化 ,详情参考 https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/connectionState
-              console.log('当前状态==>',state)
-            });
-
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_DATA_CHANNEL_OPEN,function(event)
-            {
-              console.log('rtc datachannel 打开 :',event)
-            });
-
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_DATA_CHANNEL_MSG,function(event)
-            {
-              console.log('rtc datachannel 消息 :',event.data)
-              document.getElementById('msgrecv').value = event.data
-            });
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_DATA_CHANNEL_ERR,function(event)
-            {
-              console.log('rtc datachannel 错误 :',event)
-            });
-            player.on(ZLMRTCClient.Events.WEBRTC_ON_DATA_CHANNEL_CLOSE,function(event)
-            {
-              console.log('rtc datachannel 关闭 :',event)
-            });
-      }
-
-      function start()
-      {
-        stop();
-        let elr = document.getElementById("resolution");
-        let res = elr.options[elr.selectedIndex].text.match(/\d+/g);
-        let h = parseInt(res.pop());
-        let w = parseInt(res.pop());
-
-        if(document.getElementById('useCamera').checked && !recvOnly)
-        {
-          ZLMRTCClient.isSupportResolution(w,h).then(e=>{
-            start_play()
-          }).catch(e=>{
-           alert("not support resolution")
-          });
-        }else{
-          start_play()
+        // 验证输入
+        if (!app || !stream) {
+            showError('APP和流名称不能为空');
+            return;
         }
-      }
 
-      function stop()
-      {
-          if(player)
-          {
-            player.close();
-            player = null;
-            var remote = document.getElementById('video');
-            if(remote)
-            {
-                remote.srcObject = null;
-                remote.load();
+        // 隐藏错误信息
+        hideError();
+
+        // 显示加载状态
+        createBtn.disabled = true;
+        createBtn.innerHTML = '<span class="loading"></span> 生成中...';
+
+        try {
+            // 调用API
+            const response = await fetch('/index/api/createTestVideo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    app: app,
+                    stream: stream,
+                    autoClose: 0
+                })
+            });
+
+            const result = await response.json();
+
+            // 检查响应状态
+            if (!response.ok || result.code !== 0) {
+                throw new Error(result.msg || '生成视频流失败');
             }
-            var local = document.getElementById('selfVideo');
-            local.srcObject = null;
-            local.load();
-          }
-      }
 
-      function send(){
-        if(player){
-          //send msg refernece https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/send
-          player.sendMsg(document.getElementById('msgsend').value)
+            // 显示结果
+            displayResult(result.data);
+
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            // 恢复按钮状态
+            createBtn.disabled = false;
+            createBtn.textContent = '生成测试视频流';
         }
-      }
+    });
 
-      function close(){
-        if(player){
-          player.closeDataChannel()
+    // 显示错误信息
+    function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+
+        // 3秒后自动隐藏
+        setTimeout(hideError, 3000);
+    }
+
+    // 隐藏错误信息
+    function hideError() {
+        errorMsg.style.display = 'none';
+        errorMsg.textContent = '';
+    }
+
+    // 显示结果
+    function displayResult(data) {
+        // 清空列表
+        urlList.innerHTML = '';
+
+        // URL标签映射，用于显示友好名称
+        const urlLabels = {
+            hlsUrl: 'HLS地址',
+            rtspUrl: 'RTSP地址',
+            rtmpUrl: 'RTMP地址',
+            wsFlvUrl: 'WS-FLV地址',
+            httpFlvUrl: 'HTTP-FLV地址',
+            httpFmp4Url: 'HTTP-FMP4地址',
+            wsFmp4Url: 'WS-FMP4地址',
+            httpTsUrl: 'HTTP-TS地址',
+            wsTsUrl: 'WS-TS地址'
+        };
+
+        // 遍历数据，只显示非null的URL
+        for (const [key, value] of Object.entries(data)) {
+            if (key.includes('Url') && value !== null) {
+                const listItem = document.createElement('li');
+                listItem.className = 'url-item';
+
+                // 创建标签
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'url-label';
+                labelSpan.textContent = urlLabels[key] || key;
+
+                // 创建URL值
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'url-value';
+                valueSpan.textContent = value;
+
+                // 创建复制按钮
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = '复制';
+                copyBtn.dataset.url = value;
+
+                // 添加复制事件
+                copyBtn.addEventListener('click', function() {
+                    const url = this.dataset.url;
+                    navigator.clipboard.writeText(url).then(() => {
+                        // 显示已复制状态
+                        this.textContent = '已复制';
+                        this.classList.add('copied');
+
+                        // 2秒后恢复原状
+                        setTimeout(() => {
+                            this.textContent = '复制';
+                            this.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('无法复制文本: ', err);
+                        alert('复制失败，请手动复制');
+                    });
+                });
+
+                // 组装列表项
+                listItem.appendChild(labelSpan);
+                listItem.appendChild(valueSpan);
+                listItem.appendChild(copyBtn);
+                urlList.appendChild(listItem);
+            }
         }
-      }
 
-    </script>
-    
-  </body>
+        // 显示弹窗
+        resultModal.classList.add('active');
+    }
 
-  <script>
-    
-  </script>
+    // 关闭弹窗
+    closeModal.addEventListener('click', function() {
+        resultModal.classList.remove('active');
+    });
 
+    // 点击弹窗外部关闭弹窗
+    resultModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            resultModal.classList.remove('active');
+        }
+    });
+
+    // 链接点击效果
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function() {
+            this.style.opacity = '0.7';
+            setTimeout(() => {
+                this.style.opacity = '1';
+            }, 200);
+        });
+    });
+</script>
+</body>
 </html>
