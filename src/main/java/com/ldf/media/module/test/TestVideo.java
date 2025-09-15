@@ -1,11 +1,14 @@
 package com.ldf.media.module.test;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import com.aizuda.zlm4j.structure.MK_INI;
 import com.aizuda.zlm4j.structure.MK_MEDIA;
 import com.ldf.media.api.model.param.TestVideoParam;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 
+import java.awt.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +68,11 @@ public class TestVideo {
         int timebase = 1000 / param.getFps();
         while (mkMedia != null) {
             long startTime = System.currentTimeMillis();
-            YUV420PBarGenerator.YUV420PFrame yuv420PFrame = YUV420PBarGenerator.generateBarFrame(param.getWidth(), param.getHeight());
+            //YUV420PBarGenerator.YUV420PFrame yuv420PFrame = YUV420PBarGenerator.generateBarFrame(param.getWidth(), param.getHeight());
+            Color bgColor = new Color(200, 255, 255);
+            Color textColor = new Color(255, 120, 0);
+            String text= StrUtil.format("欢迎使用ZLM4J！这是一个演示视频，当前时间是：{}", DateUtil.now());
+            YuvImageGenerator.YUV420PFrame yuv420PFrame = YuvImageGenerator.generateYuv420pImage(param.getWidth(), param.getHeight(), bgColor, text, 56, textColor);
             if (yPointer == null) {
                 yPointer = new Memory((long) yuv420PFrame.getHeight() * yuv420PFrame.getLinesize()[0]);
             }
