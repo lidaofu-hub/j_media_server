@@ -1,5 +1,7 @@
 package com.ldf.media.module.test;
 
+import cn.hutool.core.util.StrUtil;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
@@ -81,8 +83,9 @@ public class YuvImageGenerator {
             FontMetrics metrics = g2d.getFontMetrics();
             int x = (width - metrics.stringWidth(text)) / 2;
             int y = (height - metrics.getHeight()) / 2 + metrics.getAscent();
-
             g2d.drawString(text, x, y);
+            g2d.drawString(StrUtil.format("当前系统CPU占用： {}%",SystemMonitor.getProcessCpuUsage()), x, y+64);
+            g2d.drawString(StrUtil.format("当前系统RAM占用： {}%",SystemMonitor.getMemoryUsage()), x, y+128);
         }
         g2d.dispose();
 
