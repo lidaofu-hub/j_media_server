@@ -111,7 +111,6 @@ public class TestVideo {
                 Long ptsNow = frameQueue.poll(5, TimeUnit.SECONDS);
                 if (ptsNow!=null) {
                     synchronized (this) {
-                        System.out.println("pts:"+ptsNow);
                         if (mkMedia != null) {
                             ZLM_API.mk_media_input_yuv(mkMedia, new Pointer[]{yPointer, uPointer, vPointer}, linesize, ptsNow);
                         }
