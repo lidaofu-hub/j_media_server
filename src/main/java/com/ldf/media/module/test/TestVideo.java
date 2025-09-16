@@ -109,9 +109,12 @@ public class TestVideo {
         while (mkMedia != null) {
             try {
                 Long ptsNow = frameQueue.poll(5, TimeUnit.SECONDS);
-                synchronized (this) {
-                    if (mkMedia != null) {
-                        ZLM_API.mk_media_input_yuv(mkMedia, new Pointer[]{yPointer, uPointer, vPointer}, linesize, ptsNow);
+                if (ptsNow!=null) {
+                    synchronized (this) {
+                        System.out.println("pts:"+ptsNow);
+                        if (mkMedia != null) {
+                            ZLM_API.mk_media_input_yuv(mkMedia, new Pointer[]{yPointer, uPointer, vPointer}, linesize, ptsNow);
+                        }
                     }
                 }
             } catch (InterruptedException e) {

@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
 public class YuvImageGenerator {
+    static {
+         SimHeiFontLoader.loadSimHeiFont(24);
+    }
 
     // 用于包装YUV420P数据的类
     public static class YUV420PFrame {
@@ -77,7 +80,7 @@ public class YuvImageGenerator {
         if (text != null && !text.isEmpty()) {
             // 使用指定的文字颜色
             g2d.setColor(textColor);
-            g2d.setFont(SimHeiFontLoader.loadSimHeiFont(textSize));
+            g2d.setFont(new Font("SimHei",Font.PLAIN,textSize));
 
             // 计算文字位置使其居中
             FontMetrics metrics = g2d.getFontMetrics();
