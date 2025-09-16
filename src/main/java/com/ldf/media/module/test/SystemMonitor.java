@@ -9,15 +9,21 @@ public class SystemMonitor {
     // 保存上一次CPU时间用于计算CPU占用率
     private static long lastSystemTime = 0;
     private static long lastProcessCpuTime = 0;
+    private static float lastCpuUsage = 0.0f;
+    private static float lastRamUsage = 0.0f;
+    private static long lastCpuReadTime = 0;
+    private static long lastRamReadTime = 0;
 
     /**
      * 获取当前JVM进程的CPU占用率
      *
      * @return CPU占用率，范围0.0-100.0
      */
-    public static float getProcessCpuUsage() {
+    public static float getProcessCpuUsage(long now) {
+        if ((now - lastCpuReadTime) <= 1000) {
+            return lastCpuUsage;
+        }
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-
         long currentProcessCpuTime = osBean.getProcessCpuTime();
         long currentSystemTime = System.nanoTime();
 
@@ -25,9 +31,10 @@ public class SystemMonitor {
         if (lastSystemTime == 0) {
             lastSystemTime = currentSystemTime;
             lastProcessCpuTime = currentProcessCpuTime;
+            lastCpuReadTime = now;
+            lastCpuUsage = 0.0f;
             return 0.0f;
         }
-
         long elapsedCpu = currentProcessCpuTime - lastProcessCpuTime;
         long elapsedTime = currentSystemTime - lastSystemTime;
 
@@ -38,8 +45,10 @@ public class SystemMonitor {
 
         // 获取CPU核心数
         int availableProcessors = Runtime.getRuntime().availableProcessors();
-// 计算单核心视角的CPU占用率（限制在100%以内）
+        // 计算单核心视角的CPU占用率（限制在100%以内）
         float cpuUsage = (elapsedCpu / (float) elapsedTime / availableProcessors) * 100;
+        lastCpuUsage = cpuUsage;
+        lastCpuReadTime = now;
         return cpuUsage;
     }
 
@@ -48,7 +57,10 @@ public class SystemMonitor {
      *
      * @return 内存占用率，范围0.0-100.0
      */
-    public static float getMemoryUsage() {
+    public static float getMemoryUsage(long now) {
+        if ((now - lastRamReadTime) <= 1000) {
+            return lastRamUsage;
+        }
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 
         // 总物理内存
@@ -59,6 +71,9 @@ public class SystemMonitor {
         long usedMemory = totalMemory - freeMemory;
 
         // 计算内存占用率
-        return (usedMemory / (float) totalMemory) * 100;
+        float memoryUsage = (usedMemory / (float) totalMemory) * 100;
+        lastRamUsage = memoryUsage;
+        lastRamReadTime = now;
+        return memoryUsage;
     }
 }
