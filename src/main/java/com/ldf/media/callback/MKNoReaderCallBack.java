@@ -33,7 +33,7 @@ public class MKNoReaderCallBack implements IMKNoReaderCallBack {
         //无人观看时候可以调用下面的实现关流 不调用就代表不关流 需要配置protocol.auto_close 为 0 这里才会有回调
         //关流操作 只关闭一种协议流
         //if (schemaValue.equals("rtmp")){
-        //MediaServerContext.ZLM_API.mk_media_source_close(ctx, 0)
+        //MediaServerContext.ZLM_API.mk_media_source_close(sender, 0)
         //}
     }
 }
