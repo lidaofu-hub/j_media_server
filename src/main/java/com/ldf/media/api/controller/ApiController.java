@@ -34,7 +34,7 @@ public class ApiController {
     private final IVideoStackService iVideoStackService;
     private final ITestVideoService iTestVideoService;
 
-    @ApiOperation(value = "【拉流代理】添加rtmp/rtsp拉流代理", notes = "此接口不会返回具体流地址，请按照流地址生成规则结合自己网络信息来拼接具体地址")
+    @ApiOperation(value = "【拉流代理】添加拉流代理", notes = "已支持webrtc代理 url格式 webrtc://127.0.0.1:8899/live/test")
     @PostMapping(value = "/addStreamProxy")
     public Result<StreamUrlResult> addStreamProxy(@Validated @RequestBody StreamProxyParam param) {
         StreamUrlResult result = iApiService.addStreamProxy(param);
@@ -48,7 +48,7 @@ public class ApiController {
         return new Result<>(flag);
     }
 
-    @ApiOperation(value = "【推流代理】添加rtmp/rtsp推流代理")
+    @ApiOperation(value = "【推流代理】添加推流代理",notes = "已支持webrtc代理 url格式 webrtc://127.0.0.1:8899/live/test")
     @PostMapping(value = "/addStreamPusherProxy")
     public Result<String> addStreamPusherProxy(@Validated @RequestBody StreamPushProxyParam param) {
         String error = iApiService.addStreamPusherProxy(param);
@@ -56,7 +56,7 @@ public class ApiController {
     }
 
 
-    @ApiOperation(value = "【推流代理】删除rtmp/rtsp推流代理")
+    @ApiOperation(value = "【推流代理】删除推流代理")
     @PostMapping(value = "/delStreamPusherProxy")
     public Result<Boolean> delStreamPusherProxy(String key) {
         Boolean flag = iApiService.delStreamPusherProxy(key);
@@ -176,7 +176,7 @@ public class ApiController {
         return new Result<>(results);
     }
 
-    @ApiOperation(value = "【截图】获取截图")
+    @ApiOperation(value = "【截图】获取截图",notes = "rtsp地址支持H264、H265，rtmp/http-flv只支持H264")
     @ApiImplicitParam(name = "url", value = "截图流地址", required = true)
     @GetMapping(value = "/getSnap")
     public void getSnap(String url, HttpServletResponse response) {
@@ -184,7 +184,7 @@ public class ApiController {
 
     }
 
-    @ApiOperation(value = "【转码】拉流代理转码(beta)", notes = "默认H265转H264 支持分辨率调整 暂时只支持视频转码，音频因为各种封装格式对编码格式、音频参数等转换规则复杂暂时不支持")
+    @ApiOperation(value = "【转码】拉流代理转码(beta)", notes = "默认H265转H264 支持分辨率调整 暂时只支持视频转码")
     @PostMapping(value = "/transcode")
     public Result<String> transcode(@Validated @RequestBody TranscodeParam param) {
         iTranscodeService.transcode(param);
