@@ -2,8 +2,8 @@ package com.ldf.media.api.controller;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import com.aizuda.zlm4j.callback.IMKWebRtcGetAnwerSdpCallBack;
+import com.ldf.media.api.model.result.WebRtcResult;
 import com.ldf.media.config.MediaServerConfig;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -11,14 +11,13 @@ import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
 
@@ -54,36 +53,45 @@ public class WebRTCController {
      */
     @ApiOperation(value = "【webrtc】sdp协议交换")
     @PostMapping("/index/api/webrtc")
-    public DeferredResult<ResponseEntity<String>> webrtc(@ApiParam("应用名称") String app,
-                                                         @ApiParam("流标识") String stream,
-                                                         @ApiParam("sdp协议动作类型：play、push、echo") String type,
-                                                         @RequestBody String pcSdp) throws IOException {
-        DeferredResult<ResponseEntity<String>> out = new DeferredResult<>();
+    public WebRtcResult webrtc(@ApiParam("应用名称") String app,
+                               @ApiParam("流标识") String stream,
+                               @ApiParam("sdp协议动作类型：play、push、echo") String type,
+                               @RequestBody String pcSdp) throws IOException {
+        ArrayBlockingQueue<WebRtcResult> queue = new ArrayBlockingQueue<>(1);
         //webrtc使用的是udp,默认监听8000,不需要设置端口号
         String rtcUrl = StrUtil.format("rtc://{}:{}/{}/{}", config.getRtc_host(), config.getRtc_port(), app, stream);
-        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = createWebrtcAnswerSdpCallback(out);
+        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = createWebrtcAnswerSdpCallback(queue);
         ZLM_API.mk_webrtc_get_answer_sdp(null, imkWebRtcGetAnwerSdpCallBack, type, pcSdp, rtcUrl);
-        return out;
+        try {
+            WebRtcResult result = queue.poll(10, TimeUnit.SECONDS);
+            return result;
+        } catch (InterruptedException e) {
+
+        }
+        return new WebRtcResult(-1, "获取sdp超时");
     }
 
     /**
      * 构建服务端SDP协议回调对象
      *
-     * @param out 异步接受对象
+     * @param queue 异步接受对象
      * @return
      */
-    private static IMKWebRtcGetAnwerSdpCallBack createWebrtcAnswerSdpCallback(DeferredResult<ResponseEntity<String>> out) {
+    private static IMKWebRtcGetAnwerSdpCallBack createWebrtcAnswerSdpCallback(ArrayBlockingQueue<WebRtcResult> queue) {
         return (pointer, sevSdp, error) -> {
-            JSONObject result = new JSONObject();
+            WebRtcResult result = new WebRtcResult();
             if (StrUtil.isNotBlank(error)) {
-                log.error("zkMediaKit 交互 webrtc 协议失败！");
-                result.putOnce("code", -1).putOnce("sdp", null);
+                log.error("ZLM4J 交互 webrtc 协议失败！原因：{}", error);
+                result.setCode(-1);
+                result.setMsg(error);
+                queue.offer(result);
+
             } else {
-                log.info("zkMediaKit 交互 webrtc 协议成功！");
-                result.putOnce("code", 0).putOnce("sdp", sevSdp);
+                log.info("ZLM4J 交互 webrtc 协议成功！");
+                result.setCode(0);
+                result.setSdp(sevSdp);
+                queue.offer(result);
             }
-            ResponseEntity<String> response = new ResponseEntity<>(result.toString(), HttpStatus.OK);
-            out.setResult(response);
         };
     }
 
