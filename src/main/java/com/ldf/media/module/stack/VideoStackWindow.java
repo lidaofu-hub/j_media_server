@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.ldf.media.api.model.param.VideoStackWindowParam;
 import com.ldf.media.pool.MediaServerThreadPool;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
@@ -65,7 +67,9 @@ public class VideoStackWindow {
 
     private SwsContext imgSwsCtx = null;
 
-    private Boolean isStop = false;
+    private final AtomicBoolean isStop = new AtomicBoolean(false);
+
+    private volatile Thread runningThread = null;
 
 
     public VideoStackWindow(VideoStackWindowParam param, String fillImgUrl, int width, int height, int yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
@@ -82,7 +86,12 @@ public class VideoStackWindow {
     public void init() {
         if (StrUtil.isNotBlank(param.getVideoUrl())) {
             MediaServerThreadPool.execute(() -> {
-                initFillVideo();
+                runningThread = Thread.currentThread();
+                try {
+                    initFillVideo();
+                } finally {
+                    runningThread = null;
+                }
             });
         } else if (StrUtil.isNotBlank(param.getImgUrl())) {
             initFillImg(param.getImgUrl());
@@ -193,7 +202,7 @@ public class VideoStackWindow {
             free();
             return;
         }
-        while (!isStop && (ret = avformat.av_read_frame(iFmtCtx, avPacket)) == 0) {
+        while (!isStop.get() && (ret = avformat.av_read_frame(iFmtCtx, avPacket)) == 0) {
             if (avPacket.stream_index() == vIndex) {
                 ret = avcodec.avcodec_send_packet(deCodecCtx, avPacket);
                 if (ret < 0) {
@@ -201,7 +210,7 @@ public class VideoStackWindow {
                     free();
                     return;
                 }
-                while (true) {
+                while (!isStop.get()) {
                     if (avutil.av_frame_is_writable(avFrame) != 1) {
                         avutil.av_frame_make_writable(avFrame);
                     }
@@ -214,15 +223,23 @@ public class VideoStackWindow {
                         free();
                         return;
                     }
+                    if (isStop.get()) {
+                        avutil.av_frame_unref(avFrame);
+                        break;
+                    }
                     if (avutil.av_frame_is_writable(rgbFrame) != 1) {
                         avutil.av_frame_make_writable(rgbFrame);
                     }
                     swscale.sws_scale(avSwsCtx, avFrame.data(), avFrame.linesize(), 0, avFrame.height(), rgbFrame.data(), rgbFrame.linesize());
+                    if (isStop.get()) {
+                        avutil.av_frame_unref(avFrame);
+                        break;
+                    }
                     int yRgbPos = 0;
                     int destPos = yPos;
                     int diffW = linePointer.get(0);
                     int destW = rgbFrame.linesize().get(0);
-                    for (int i = 0; i < rgbFrame.height(); i++) {
+                    for (int i = 0; i < rgbFrame.height() && !isStop.get(); i++) {
                         Pointer.memcpy(dataPointer.get(0).getPointer(destPos), rgbFrame.data().get(0).getPointer(yRgbPos), rgbFrame.width() * 3L);
                         yRgbPos = yRgbPos + destW;
                         destPos = destPos + diffW;
@@ -275,7 +292,18 @@ public class VideoStackWindow {
      * 停止
      */
     public void stop() {
-        isStop = true;
+        isStop.set(true);
+    }
+
+    public void awaitStop(long timeoutMillis) {
+        Thread t = runningThread;
+        if (t != null) {
+            try {
+                t.join(timeoutMillis);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
 

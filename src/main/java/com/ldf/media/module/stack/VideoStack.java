@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
 import static org.bytedeco.ffmpeg.global.avformat.AVFMT_NOFILE;
@@ -45,9 +46,9 @@ public class VideoStack {
 
     private static int FPS = 25;
 
-    private Boolean isStop = false;
+    private final AtomicBoolean isStop = new AtomicBoolean(false);
 
-    private Boolean initStatus = false;
+    private volatile boolean initStatus = false;
 
     private Boolean isPush = false;
 
@@ -313,7 +314,7 @@ public class VideoStack {
                 return;
             }
         }
-        while (!isStop) {
+        while (!isStop.get()) {
             if (avutil.av_frame_is_writable(avFrame) != 1) {
                 avutil.av_frame_make_writable(avFrame);
             }
@@ -384,17 +385,15 @@ public class VideoStack {
         for (VideoStackWindow videoStackWindow : windowList) {
             videoStackWindow.stop();
         }
+        for (VideoStackWindow videoStackWindow : windowList) {
+            videoStackWindow.awaitStop(5000);
+        }
         windowList.clear();
         param = newParam;
-        //填充颜色
         initFillColor();
-        //填充图片
         initFillImage();
-        //画分割线
         initGridLine();
-        //初始化窗口
         initStackWindow();
-
     }
 
 
@@ -405,8 +404,11 @@ public class VideoStack {
         for (VideoStackWindow videoStackWindow : windowList) {
             videoStackWindow.stop();
         }
+        for (VideoStackWindow videoStackWindow : windowList) {
+            videoStackWindow.awaitStop(5000);
+        }
         windowList.clear();
-        this.isStop = true;
+        this.isStop.set(true);
     }
 
     /**
