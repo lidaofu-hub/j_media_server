@@ -104,23 +104,31 @@ public class WebRTCController {
      */
     @PostMapping("/index/api/whip")
     public void whip(String app, String stream, @RequestBody String offerSdp) {
-        //这里可以做鉴权
-        String authorization = request.getHeader("Authorization");
-        //webrtc使用的是udp,默认监听8000,不需要设置端口号
+        ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
         String rtcUrl = StrUtil.format("rtc://{}:{}/{}/{}", config.getRtc_host(), config.getRtc_port(), app, stream);
-        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = (pointer, sdp, s1) -> {
-            try {
+        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = createSdpCallback(queue);
+        ZLM_API.mk_webrtc_get_answer_sdp(null, imkWebRtcGetAnwerSdpCallBack, "push", offerSdp, rtcUrl);
+        try {
+            String sdp = queue.poll(10, TimeUnit.SECONDS);
+            if (sdp != null && !sdp.startsWith("ERROR:")) {
                 response.setContentType("application/sdp");
-                //todo 如果是https请换为https
                 String location = StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}", config.getRtc_host(), port, "whip_" + stream, RandomUtil.randomString(8));
                 response.setHeader("Location", location);
                 response.setStatus(201);
                 response.getWriter().write(sdp);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } else {
+                response.setStatus(500);
+                response.getWriter().write(sdp != null ? sdp.substring(6) : "获取sdp超时");
             }
-        };
-        ZLM_API.mk_webrtc_get_answer_sdp(null, imkWebRtcGetAnwerSdpCallBack, "push", offerSdp, rtcUrl);
+        } catch (Exception e) {
+            log.error("whip error", e);
+            try {
+                response.setStatus(500);
+                response.getWriter().write("获取sdp异常: " + e.getMessage());
+            } catch (IOException ex) {
+                log.error("write error response failed", ex);
+            }
+        }
     }
 
     /**
@@ -131,20 +139,47 @@ public class WebRTCController {
      */
     @PostMapping("/index/api/whep")
     public void whep(String app, String stream, @RequestBody String offerSdp) {
+        ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
         String rtcUrl = StrUtil.format("rtc://{}:{}/{}/{}", config.getRtc_host(), config.getRtc_port(), app, stream);
-        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = (pointer, sdp, s1) -> {
-            try {
+        IMKWebRtcGetAnwerSdpCallBack imkWebRtcGetAnwerSdpCallBack = createSdpCallback(queue);
+        ZLM_API.mk_webrtc_get_answer_sdp(null, imkWebRtcGetAnwerSdpCallBack, "play", offerSdp, rtcUrl);
+        try {
+            String sdp = queue.poll(10, TimeUnit.SECONDS);
+            if (sdp != null && !sdp.startsWith("ERROR:")) {
                 response.setContentType("application/sdp");
-                //todo 如果是https请换为https
-                String location = StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}", config.getRtc_host(), port, "whip_" + stream, RandomUtil.randomString(8));
+                String location = StrUtil.format("http://{}:{}/index/api/delete_webrtc?id={}&token={}", config.getRtc_host(), port, "whep_" + stream, RandomUtil.randomString(8));
                 response.setHeader("Location", location);
                 response.setStatus(201);
                 response.getWriter().write(sdp);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } else {
+                response.setStatus(500);
+                response.getWriter().write(sdp != null ? sdp.substring(6) : "获取sdp超时");
+            }
+        } catch (Exception e) {
+            log.error("whep error", e);
+            try {
+                response.setStatus(500);
+                response.getWriter().write("获取sdp异常: " + e.getMessage());
+            } catch (IOException ex) {
+                log.error("write error response failed", ex);
+            }
+        }
+    }
+
+    /**
+     * 构建服务端SDP协议回调对象（返回String）
+     *
+     * @param queue 异步接受对象
+     * @return
+     */
+    private static IMKWebRtcGetAnwerSdpCallBack createSdpCallback(ArrayBlockingQueue<String> queue) {
+        return (pointer, sdp, error) -> {
+            if (StrUtil.isNotBlank(error)) {
+                queue.offer("ERROR:" + error);
+            } else {
+                queue.offer(sdp);
             }
         };
-        ZLM_API.mk_webrtc_get_answer_sdp(null, imkWebRtcGetAnwerSdpCallBack, "play", offerSdp, rtcUrl);
     }
 
     /**
