@@ -2,6 +2,8 @@ package com.ldf.media.api.service;
 
 import com.ldf.media.api.model.param.VideoStackParam;
 
+import java.util.List;
+
 public interface IVideoStackService {
 
     /**
@@ -24,4 +26,10 @@ public interface IVideoStackService {
      * @return
      */
     void stopStack(String id);
+
+    /**
+     * 获取所有拼接屏任务
+     * @return
+     */
+    List<VideoStackParam> listStack();
 }

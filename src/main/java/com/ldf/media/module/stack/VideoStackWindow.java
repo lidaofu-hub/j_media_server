@@ -71,8 +71,12 @@ public class VideoStackWindow {
 
     private volatile Thread runningThread = null;
 
+    private final Object canvasLock;
 
-    public VideoStackWindow(VideoStackWindowParam param, String fillImgUrl, int width, int height, int yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer) {
+    private long lastCanvasTime = 0L;
+
+
+    public VideoStackWindow(VideoStackWindowParam param, String fillImgUrl, int width, int height, int yPos, PointerPointer<Pointer> dataPointer, IntPointer linePointer, Object canvasLock) {
         this.param = param;
         this.fillImgUrl = fillImgUrl;
         this.width = width;
@@ -80,6 +84,7 @@ public class VideoStackWindow {
         this.yPos = yPos;
         this.dataPointer = dataPointer;
         this.linePointer = linePointer;
+        this.canvasLock = canvasLock;
     }
 
 
@@ -109,17 +114,22 @@ public class VideoStackWindow {
      */
     private void initFillColor(String fillColor) {
         int[] bgr = VideoStack.convertRGBHex(fillColor);
+        int rowSize = width * 3;
+        byte[] row = new byte[rowSize];
+        for (int x = 0; x < width; x++) {
+            row[x * 3] = (byte) bgr[0];
+            row[x * 3 + 1] = (byte) bgr[1];
+            row[x * 3 + 2] = (byte) bgr[2];
+        }
+        BytePointer rowPointer = new BytePointer(row);
         BytePointer bytePointer = new BytePointer(dataPointer.get(0).getPointer(yPos));
         long yDiff = linePointer.get(0);
         long yImgPos = 0L;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                long xImgPos = x * 3L;
-                bytePointer.put(yImgPos + xImgPos, (byte) bgr[0]);
-                bytePointer.put(yImgPos + xImgPos + 1, (byte) bgr[1]);
-                bytePointer.put(yImgPos + xImgPos + 2, (byte) bgr[2]);
+        synchronized (canvasLock) {
+            for (int y = 0; y < height; y++) {
+                Pointer.memcpy(bytePointer.getPointer(yImgPos), rowPointer, rowSize);
+                yImgPos = yImgPos + yDiff;
             }
-            yImgPos = yImgPos + yDiff;
         }
     }
 
@@ -128,8 +138,26 @@ public class VideoStackWindow {
      * 填充视频
      */
     private void initFillVideo() {
+        while (!isStop.get()) {
+            decodeLoop();
+            if (isStop.get()) {
+                break;
+            }
+            log.info("【拼接屏窗口】 区域：{} 断开，3秒后重连", param.getVideoUrl());
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    /**
+     * 拉流解码
+     */
+    private void decodeLoop() {
         int ret = 0;
-        System.out.println(avutil.avutil_configuration());
         iFmtCtx = new AVFormatContext(null);
         boolean isRtsp = param.getVideoUrl().startsWith("rtsp");
         if (isRtsp) {
@@ -167,7 +195,7 @@ public class VideoStackWindow {
             return;
         }
         ret = avcodec.avcodec_parameters_to_context(deCodecCtx, avStream.codecpar());
-        if (vIndex < 0) {
+        if (ret < 0) {
             avutil.av_log(deCodecCtx, AV_LOG_ERROR, "avcodec_parameters_to_context error \n");
             free();
             return;
@@ -227,6 +255,11 @@ public class VideoStackWindow {
                         avutil.av_frame_unref(avFrame);
                         break;
                     }
+                    long now = System.currentTimeMillis();
+                    if (now - lastCanvasTime < 1000 / VideoStack.FPS) {
+                        avutil.av_frame_unref(avFrame);
+                        continue;
+                    }
                     if (avutil.av_frame_is_writable(rgbFrame) != 1) {
                         avutil.av_frame_make_writable(rgbFrame);
                     }
@@ -239,11 +272,14 @@ public class VideoStackWindow {
                     int destPos = yPos;
                     int diffW = linePointer.get(0);
                     int destW = rgbFrame.linesize().get(0);
-                    for (int i = 0; i < rgbFrame.height() && !isStop.get(); i++) {
-                        Pointer.memcpy(dataPointer.get(0).getPointer(destPos), rgbFrame.data().get(0).getPointer(yRgbPos), rgbFrame.width() * 3L);
-                        yRgbPos = yRgbPos + destW;
-                        destPos = destPos + diffW;
+                    synchronized (canvasLock) {
+                        for (int i = 0; i < rgbFrame.height() && !isStop.get(); i++) {
+                            Pointer.memcpy(dataPointer.get(0).getPointer(destPos), rgbFrame.data().get(0).getPointer(yRgbPos), rgbFrame.width() * 3L);
+                            yRgbPos = yRgbPos + destW;
+                            destPos = destPos + diffW;
+                        }
                     }
+                    lastCanvasTime = now;
                     avutil.av_frame_unref(avFrame);
                 }
             }
@@ -275,10 +311,12 @@ public class VideoStackWindow {
                 int diffW = linePointer.get(0);
                 int destW = destLineSize.get(0);
                 int destPos = yPos;
-                for (int i = 0; i < height; i++) {
-                    Pointer.memcpy(dataPointer.get(0).getPointer(destPos), destPointer.getPointer(yImgPos), width * 3);
-                    yImgPos = yImgPos + destW;
-                    destPos = destPos + diffW;
+                synchronized (canvasLock) {
+                    for (int i = 0; i < height; i++) {
+                        Pointer.memcpy(dataPointer.get(0).getPointer(destPos), destPointer.getPointer(yImgPos), width * 3);
+                        yImgPos = yImgPos + destW;
+                        destPos = destPos + diffW;
+                    }
                 }
                 swscale.sws_freeContext(imgSwsCtx);
                 avutil.av_free(destPointer);

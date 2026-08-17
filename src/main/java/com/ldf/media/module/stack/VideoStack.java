@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
 import static org.bytedeco.ffmpeg.global.avformat.AVFMT_NOFILE;
@@ -44,7 +45,7 @@ import static org.bytedeco.ffmpeg.global.avutil.av_make_q;
 @Slf4j
 public class VideoStack {
 
-    private static int FPS = 25;
+    static final int FPS = 25;
 
     private final AtomicBoolean isStop = new AtomicBoolean(false);
 
@@ -80,6 +81,12 @@ public class VideoStack {
 
     private Pointer srcPointer = null;
 
+    private Pointer encodePointer = null;
+
+    private PointerPointer<Pointer> encodeDataPointer = null;
+
+    private final Object canvasLock = new Object();
+
     private SwsContext imgSwsCtx = null;
 
     private Integer srcDataSize = 0;
@@ -88,12 +95,18 @@ public class VideoStack {
 
     private List<VideoStackWindow> windowList = new ArrayList<>();
 
+    private volatile Thread encodeThread = null;
+
 
     public VideoStack(VideoStackParam param) {
         this.param = param;
         if (StrUtil.isNotBlank(param.getPushUrl())) {
             isPush = true;
         }
+    }
+
+    public VideoStackParam getParam() {
+        return param;
     }
 
     /**
@@ -112,7 +125,12 @@ public class VideoStack {
         initStackWindow();
         initStatus = true;
         MediaServerThreadPool.execute(() -> {
-            initEncodeAndPush();
+            encodeThread = Thread.currentThread();
+            try {
+                initEncodeAndPush();
+            } finally {
+                encodeThread = null;
+            }
         });
     }
 
@@ -126,6 +144,9 @@ public class VideoStack {
         dataPointer = new PointerPointer<>(4);
         linePointer = new IntPointer(4);
         srcDataSize = avutil.av_image_fill_arrays(dataPointer, linePointer, new BytePointer(srcPointer), avutil.AV_PIX_FMT_BGR24, param.getWidth(), param.getHeight(), 1);
+        encodePointer = avutil.av_mallocz(srcDataSize);
+        encodeDataPointer = new PointerPointer<>(4);
+        avutil.av_image_fill_arrays(encodeDataPointer, new IntPointer(4), new BytePointer(encodePointer), avutil.AV_PIX_FMT_BGR24, param.getWidth(), param.getHeight(), 1);
         lastPushTime = System.currentTimeMillis();
         pushWaitTime = (long) (1000 / FPS);
     }
@@ -137,17 +158,18 @@ public class VideoStack {
     private void initFillColor() {
         if (StrUtil.isBlank(param.getFillImgUrl())) {
             int[] bgr = convertRGBHex(param.getFillColor());
+            int rowSize = param.getWidth() * 3;
+            byte[] row = new byte[rowSize];
+            for (int x = 0; x < param.getWidth(); x++) {
+                row[x * 3] = (byte) bgr[0];
+                row[x * 3 + 1] = (byte) bgr[1];
+                row[x * 3 + 2] = (byte) bgr[2];
+            }
+            BytePointer rowPointer = new BytePointer(row);
             BytePointer bytePointer = new BytePointer(srcPointer);
-            // 4. 填充每一行
+            int stride = linePointer.get(0);
             for (int y = 0; y < param.getHeight(); y++) {
-                // 计算当前行的起始位置
-                long rowOffset = y * (long) linePointer.get(0);
-                for (int x = 0; x < param.getWidth(); x++) {
-                    long pixelOffset = rowOffset + x * 3L;
-                    bytePointer.put(pixelOffset, (byte) bgr[0]);
-                    bytePointer.put(pixelOffset + 1, (byte) bgr[1]);
-                    bytePointer.put(pixelOffset + 2, (byte) bgr[2]);
-                }
+                Pointer.memcpy(bytePointer.getPointer((long) y * stride), rowPointer, rowSize);
             }
         }
 
@@ -171,8 +193,8 @@ public class VideoStack {
                 }
             }
         }
-        int w = param.getWidth() / param.getRow();
-        int h = param.getHeight() / param.getCol();
+        int w = param.getWidth() / param.getCol();
+        int h = param.getHeight() / param.getRow();
         if (StrUtil.isNotBlank(param.getFillImgUrl())) {
             ImageData imageData = getImageBGRData(param.getFillImgUrl());
             if (imageData != null) {
@@ -191,7 +213,7 @@ public class VideoStack {
                     int diffW = linePointer.get(0);
                     int destW = destLineSize.get(0);
                     for (Integer index : windowSet) {
-                        int ySrcPos = ((index - 1) / param.getRow()) * diffW * h + ((index - 1) % param.getRow()) * destW;
+                        int ySrcPos = ((index - 1) / param.getCol()) * diffW * h + ((index - 1) % param.getCol()) * w * 3;
                         int yImgPos = 0;
                         for (int i = 0; i < h; i++) {
                             Pointer.memcpy(srcPointer.getPointer(ySrcPos), destPointer.getPointer(yImgPos), w * 3L);
@@ -226,7 +248,7 @@ public class VideoStack {
         if (CollectionUtil.isNotEmpty(urlList)) {
             for (VideoStackWindowParam videoStackWindowParam : urlList) {
                 int[] whp = calculateBlockDimensions(videoStackWindowParam.getSpan(), param.getWidth(), param.getHeight(), param.getRow(), param.getCol(), linePointer.get(0));
-                VideoStackWindow videoStackWindow = new VideoStackWindow(videoStackWindowParam, param.getFillImgUrl(), whp[0], whp[1], whp[2], dataPointer, linePointer);
+                VideoStackWindow videoStackWindow = new VideoStackWindow(videoStackWindowParam, param.getFillImgUrl(), whp[0], whp[1], whp[2], dataPointer, linePointer, canvasLock);
                 videoStackWindow.init();
                 windowList.add(videoStackWindow);
             }
@@ -248,10 +270,13 @@ public class VideoStack {
         enCodecCtx.pix_fmt(avutil.AV_PIX_FMT_YUV420P);
         enCodecCtx.max_b_frames(0);
         enCodecCtx.has_b_frames(0);
+        enCodecCtx.gop_size(FPS * 2);
+        enCodecCtx.bit_rate((long) param.getWidth() * param.getHeight() * 2);
         enCodecCtx.codec_id(avcodec.AV_CODEC_ID_H264);
         enCodecCtx.codec_type(avutil.AVMEDIA_TYPE_VIDEO);
         AVDictionary codecOptions = new AVDictionary(null);
         avutil.av_dict_set(codecOptions, "preset", "ultrafast", 0);
+        avutil.av_dict_set(codecOptions, "tune", "zerolatency", 0);
         ret = avcodec.avcodec_open2(enCodecCtx, avCodec, codecOptions);
         avutil.av_dict_free(codecOptions);
         if (ret < 0) {
@@ -318,7 +343,10 @@ public class VideoStack {
             if (avutil.av_frame_is_writable(avFrame) != 1) {
                 avutil.av_frame_make_writable(avFrame);
             }
-            swscale.sws_scale(avSwsCtx, dataPointer, linePointer, 0, param.getHeight(), avFrame.data(), avFrame.linesize());
+            synchronized (canvasLock) {
+                Pointer.memcpy(new BytePointer(encodePointer), new BytePointer(srcPointer), srcDataSize);
+            }
+            swscale.sws_scale(avSwsCtx, encodeDataPointer, linePointer, 0, param.getHeight(), avFrame.data(), avFrame.linesize());
             avFrame.pts(pts);
             pts++;
             ret = avcodec.avcodec_send_frame(enCodecCtx, avFrame);
@@ -347,20 +375,12 @@ public class VideoStack {
                 long elapsed = System.currentTimeMillis() - lastPushTime;
                 long remaining = pushWaitTime - elapsed;
                 if (remaining > 0) {
-                    while (System.currentTimeMillis() - lastPushTime < pushWaitTime) {
-                        Thread.yield();
-                    }
-                    if (isPush) {
-                        avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
-                    } else {
-                        ZLM_API.mk_media_input_h264(mkMedia, new com.sun.jna.Pointer(avPacket.data().address()), avPacket.size(), avPacket.pts(), avPacket.pts());
-                    }
+                    LockSupport.parkNanos(remaining * 1_000_000L);
+                }
+                if (isPush) {
+                    avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
                 } else {
-                    if (isPush) {
-                        avformat.av_interleaved_write_frame(oFmtCtx, avPacket);
-                    } else {
-                        ZLM_API.mk_media_input_h264(mkMedia, new com.sun.jna.Pointer(avPacket.data().address()), avPacket.size(), avPacket.pts(), avPacket.pts());
-                    }
+                    ZLM_API.mk_media_input_h264(mkMedia, new com.sun.jna.Pointer(avPacket.data().address()), avPacket.size(), avPacket.pts(), avPacket.pts());
                 }
                 lastPushTime = System.currentTimeMillis();
                 avcodec.av_packet_unref(avPacket);
@@ -381,6 +401,8 @@ public class VideoStack {
      */
     public void reset(VideoStackParam newParam) {
         Assert.isTrue(initStatus, "拼接屏任务尚未初始化成功，请稍后再试");
+        Assert.isTrue(newParam.getWidth().equals(param.getWidth())
+                && newParam.getHeight().equals(param.getHeight()), "重设任务不支持修改分辨率，请先停止再重新开启");
         initStatus = false;
         for (VideoStackWindow videoStackWindow : windowList) {
             videoStackWindow.stop();
@@ -394,6 +416,7 @@ public class VideoStack {
         initFillImage();
         initGridLine();
         initStackWindow();
+        initStatus = true;
     }
 
 
@@ -409,6 +432,14 @@ public class VideoStack {
         }
         windowList.clear();
         this.isStop.set(true);
+        Thread t = encodeThread;
+        if (t != null) {
+            try {
+                t.join(5000);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
@@ -441,7 +472,11 @@ public class VideoStack {
         }
         if (srcPointer != null) {
             avutil.av_free(srcPointer);
-            avPacket = null;
+            srcPointer = null;
+        }
+        if (encodePointer != null) {
+            avutil.av_free(encodePointer);
+            encodePointer = null;
         }
         if (mkMedia != null) {
             ZLM_API.mk_media_release(mkMedia);

@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.aizuda</groupId>
             <artifactId>zlm4j</artifactId>
-            <version>1.7.2</version>
+            <version>1.12.0</version>
         </dependency>
         <!--JavaCV相关依赖-->
         <dependency>

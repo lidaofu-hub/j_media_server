@@ -12,8 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.PreDestroy;
 
 import static com.ldf.media.context.MediaServerContext.ZLM_API;
 
@@ -22,7 +26,7 @@ import static com.ldf.media.context.MediaServerContext.ZLM_API;
 public class VideoStackService implements IVideoStackService {
     @Autowired
     private MediaServerConfig mediaServerConfig;
-    private final static Map<String, VideoStack> VIDEO_STACK_MAP = new HashMap<>();
+    private final static Map<String, VideoStack> VIDEO_STACK_MAP = new ConcurrentHashMap<>();
 
 
     @Override
@@ -35,7 +39,11 @@ public class VideoStackService implements IVideoStackService {
         //String pushUrl = StrUtil.format("rtmp://127.0.0.1:{}/{}/{}", mediaServerConfig.getRtmp_port(), param.getApp(), param.getId());
         VideoStack videoStack = new VideoStack(param);
         videoStack.init();
-        VIDEO_STACK_MAP.put(param.getId(), videoStack);
+        VideoStack old = VIDEO_STACK_MAP.putIfAbsent(param.getId(), videoStack);
+        if (old != null) {
+            videoStack.stop();
+            throw new IllegalArgumentException("拼接屏任务已存在");
+        }
     }
 
 
@@ -48,9 +56,29 @@ public class VideoStackService implements IVideoStackService {
 
     @Override
     public void stopStack(String id) {
-        VideoStack videoStack = VIDEO_STACK_MAP.get(id);
-        Assert.isTrue(VIDEO_STACK_MAP.containsKey(id), "拼接屏任务不存在");
+        VideoStack videoStack = VIDEO_STACK_MAP.remove(id);
+        Assert.notNull(videoStack, "拼接屏任务不存在");
         videoStack.stop();
-        VIDEO_STACK_MAP.remove(id);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        for (VideoStack videoStack : VIDEO_STACK_MAP.values()) {
+            try {
+                videoStack.stop();
+            } catch (Exception e) {
+                log.error("【拼接屏】停止任务异常", e);
+            }
+        }
+        VIDEO_STACK_MAP.clear();
+    }
+
+    @Override
+    public List<VideoStackParam> listStack() {
+        List<VideoStackParam> list = new ArrayList<>();
+        for (VideoStack videoStack : VIDEO_STACK_MAP.values()) {
+            list.add(videoStack.getParam());
+        }
+        return list;
     }
 }

@@ -213,6 +213,12 @@ public class ApiController {
         return new Result<>();
     }
 
+    @ApiOperation(value = "【拼接屏】获取所有拼接屏任务")
+    @GetMapping(value = "/stack/list")
+    public Result<List<VideoStackParam>> listStack() {
+        return new Result<>(iVideoStackService.listStack());
+    }
+
     @ApiOperation(value = "【测试视频流】生成一路测试视频流", notes = "生成一路测试视频流")
     @PostMapping(value = "/createTestVideo")
     public Result<StreamUrlResult> createTestVideo(@Validated @RequestBody TestVideoParam param) {
